@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { db } from "@/utils/db";
+import { desktop } from "@/utils/desktop";
 import type { DocumentTemplate } from "@/types";
 
 const md = (...lines: string[]) => lines.join("\n");
@@ -927,48 +927,56 @@ export const useTemplateStore = create<TemplateStore>()((set, get) => ({
   loaded: false,
 
   ensureBuiltin: async () => {
-    const all = await db.templates.toArray();
+    const all = (await desktop.templatesList()) as Array<{
+      uuid: string;
+      builtin: boolean;
+    }>;
     const builtinIds = new Set(BUILTIN_TEMPLATES.map((b) => b.id));
 
-    // 現行の内蔵一覧に含まれなくなった旧内蔵テンプレートのレコードを除去する
     const obsolete = all.filter((a) => a.builtin && !builtinIds.has(a.uuid));
-    if (obsolete.length > 0) {
-      await db.templates.bulkDelete(obsolete.map((a) => a.id!));
+    for (const item of obsolete) {
+      await desktop.templatesDelete(item.uuid);
     }
 
-    // 存在しない内蔵テンプレートだけを追加する(ユーザー編集済みの内容は保持)
     const remaining = all.filter((a) => !obsolete.includes(a));
     const missing = BUILTIN_TEMPLATES.filter((b) =>
       remaining.every((a) => a.uuid !== b.id),
     );
-    if (missing.length > 0) {
-      await db.templates.bulkAdd(
-        missing.map((b) => ({
-          uuid: b.id,
-          name: b.name,
-          description: b.description,
-          content: b.content,
-          category: b.category,
-          builtin: true,
-          createdAt: b.createdAt,
-          updatedAt: b.updatedAt,
-        })),
-      );
+    for (const b of missing) {
+      await desktop.templatesUpsert({
+        uuid: b.id,
+        name: b.name,
+        description: b.description,
+        content: b.content,
+        category: b.category,
+        builtin: true,
+        createdAt: b.createdAt.toISOString(),
+        updatedAt: b.updatedAt.toISOString(),
+      });
     }
   },
 
   load: async () => {
     await get().ensureBuiltin();
-    const rows = await db.templates.toArray();
+    const rows = (await desktop.templatesList()) as Array<{
+      uuid: string;
+      name: string;
+      description: string;
+      content: string;
+      category: string | null;
+      builtin: number;
+      createdAt: string;
+      updatedAt: string;
+    }>;
     const templates: DocumentTemplate[] = rows.map((row) => ({
       id: row.uuid,
       name: row.name,
       description: row.description,
       content: row.content,
-      category: row.category,
-      builtin: row.builtin,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      category: row.category ?? undefined,
+      builtin: !!row.builtin,
+      createdAt: new Date(row.createdAt),
+      updatedAt: new Date(row.updatedAt),
     }));
     set({ templates, loaded: true });
   },
@@ -985,33 +993,38 @@ export const useTemplateStore = create<TemplateStore>()((set, get) => ({
       createdAt: now,
       updatedAt: now,
     };
-    await db.templates.add({
+    await desktop.templatesUpsert({
       uuid: tmpl.id,
       name: tmpl.name,
       description: tmpl.description,
       content: tmpl.content,
       category: tmpl.category,
       builtin: false,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     });
     set((state) => ({ templates: [...state.templates, tmpl] }));
     return tmpl;
   },
 
   remove: async (id) => {
-    await db.templates.where("uuid").equals(id).delete();
+    await desktop.templatesDelete(id);
     set((state) => ({ templates: state.templates.filter((t) => t.id !== id) }));
   },
 
   update: async (id, input) => {
     const now = new Date();
-    await db.templates.where("uuid").equals(id).modify({
-      name: input.name,
-      description: input.description,
-      content: input.content,
-      category: input.category,
-      updatedAt: now,
+    const existing = get().templates.find((t) => t.id === id);
+    if (!existing) return;
+    await desktop.templatesUpsert({
+      uuid: id,
+      name: input.name ?? existing.name,
+      description: input.description ?? existing.description,
+      content: input.content ?? existing.content,
+      category: input.category ?? existing.category,
+      builtin: existing.builtin,
+      createdAt: existing.createdAt.toISOString(),
+      updatedAt: now.toISOString(),
     });
     set((state) => ({
       templates: state.templates.map((t) =>

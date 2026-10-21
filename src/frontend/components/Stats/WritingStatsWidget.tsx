@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getWritingStats } from "@/utils/db";
-import type { DBWritingStat } from "@/utils/db";
+import { desktop } from "@/utils/desktop";
+import type { WritingStat as DBWritingStat } from "@shared/types";
 import { useEditorStore } from "@/stores/editorStore";
 import { useTimeTrackingStore } from "@/stores/timeTrackingStore";
 
@@ -49,7 +49,7 @@ export const WritingStatsWidget: React.FC = () => {
 
   useEffect(() => {
     void (async () => {
-      const s = await getWritingStats(7);
+      const s = await desktop.statsGet(7);
       setStats(s);
     })();
   }, []);

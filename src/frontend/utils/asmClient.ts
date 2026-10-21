@@ -4,13 +4,9 @@ import type { ASMSkill } from "@/types";
 // 本番では Web版で ASM を表示しないため false。開発時のみ true に切り替える。
 export const USE_MOCK = false;
 
-export const isElectron = (): boolean => {
-  return !!window.electronAPI?.isElectron;
-};
+export const isElectron = (): boolean => false;
 
-export const isAsmAvailable = (): boolean => {
-  return isElectron() || USE_MOCK;
-};
+export const isAsmAvailable = (): boolean => USE_MOCK;
 
 const mockSkills: ASMSkill[] = [
   { name: "code-reviewer", description: "Automated code review and linting for multiple languages", version: "1.2.0", author: "asm-core", tags: ["code", "review", "lint"], installed: true },
@@ -37,45 +33,26 @@ const filterMockSkills = (query: string): ASMSkill[] => {
 };
 
 export const execAsm = async (args: string[]): Promise<string> => {
-  if (!isElectron()) {
-    if (USE_MOCK) {
-      // Mock mode for browser testing
-      const cmd = args[0];
-      const subcmd = args[1];
-      const query = args[2] || args[1] || "";
-      if (cmd === "index" && subcmd === "search") {
-        return JSON.stringify(filterMockSkills(query));
-      }
-      if (cmd === "search") {
-        return JSON.stringify(filterMockSkills(query));
-      }
-      if (cmd === "list") {
-        return JSON.stringify(mockSkills.filter((s) => s.installed));
-      }
-      if (cmd === "install" || cmd === "uninstall") {
-        return `Success: ${cmd} ${query}`;
-      }
-      return "";
+  if (USE_MOCK) {
+    // Mock mode for browser testing
+    const cmd = args[0];
+    const subcmd = args[1];
+    const query = args[2] || args[1] || "";
+    if (cmd === "index" && subcmd === "search") {
+      return JSON.stringify(filterMockSkills(query));
     }
-    throw new Error("ASM is only available in Electron");
-  }
-
-  const command = `asm ${args.join(" ")}`;
-  const result = await window.electronAPI!.exec!(command);
-
-  // ASM may output results to stderr as informational messages
-  // Only treat as error if stdout is empty and stderr looks like an error
-  const output = result.stdout || result.stderr;
-  if (!output) {
+    if (cmd === "search") {
+      return JSON.stringify(filterMockSkills(query));
+    }
+    if (cmd === "list") {
+      return JSON.stringify(mockSkills.filter((s) => s.installed));
+    }
+    if (cmd === "install" || cmd === "uninstall") {
+      return `Success: ${cmd} ${query}`;
+    }
     return "";
   }
-
-  // If stderr contains what looks like an actual error message, throw
-  if (result.stderr && !result.stdout && /^Error:/i.test(result.stderr.trim())) {
-    throw new Error(`ASM error: ${result.stderr}`);
-  }
-
-  return output;
+  throw new Error("ASM is not available");
 };
 
 const parseSkillsFromOutput = (output: string): ASMSkill[] => {

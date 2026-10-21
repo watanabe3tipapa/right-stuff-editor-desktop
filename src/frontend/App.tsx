@@ -10,7 +10,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { TemplateSelectorModal } from "./components/Templates";
 import { VersionHistoryModal } from "./components/History";
 import { BulkExportModal } from "./components/BulkExport";
-import { bumpWritingStat } from "./utils/db";
+import { desktop } from "./utils/desktop";
 import { LexicalEditor } from "./components/Editor/LexicalEditor";
 import { MarkdownPreview } from "./components/Preview/MarkdownPreview";
 import { Toolbar } from "./components/Toolbar/Toolbar";
@@ -20,11 +20,11 @@ import { Sidebar } from "./components/Sidebar/Sidebar";
 import { Settings } from "./components/Settings/Settings";
 import { WTermTerminal } from "./components/Terminal/WTermTerminal";
 import { GistUploadModal } from "./components/Gist/GistUploadModal";
+import { NotesBrowser } from "./components/Notes/NotesBrowser";
 import { GistViewer } from "./components/Gist/GistViewer";
 import { HelpModal } from "./components/Help/HelpModal";
 import { launchMdv } from "./utils/mdvConnection";
 import { supportsAsm } from "./utils/capabilities";
-import { exportAsJson, exportAsTxt } from "./utils/fileOperations";
 import { useFocusTimeTracker } from "./hooks/useFocusTimeTracker";
 
 type ViewMode = "split" | "editor" | "preview" | "chat";
@@ -50,6 +50,9 @@ const App: React.FC = () => {
     setMode,
     createDocument,
     currentDocumentId,
+    documents,
+    openNotesDocument,
+    setContent,
   } = useEditorStore();
   const { resolvedTheme } = useThemeStore();
   const { getShortcut } = useShortcutStore();
@@ -63,6 +66,7 @@ const App: React.FC = () => {
   const [asmOpen, setAsmOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [gistUploadOpen, setGistUploadOpen] = useState(false);
   const [gistViewerOpen, setGistViewerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -110,11 +114,7 @@ const App: React.FC = () => {
   const handleOpenMdv = async () => {
     const outcome = await launchMdv();
     if (outcome.ok && outcome.url) {
-      if (window.electronAPI?.openExternal) {
-        await window.electronAPI.openExternal(outcome.url);
-      } else {
-        window.open(outcome.url, "_blank");
-      }
+      await desktop.openExternal(outcome.url);
       setMdvStatus("mdv プレビューを開きました");
     } else {
       setMdvStatus(outcome.error ?? "mdv を起動できませんでした");
@@ -270,6 +270,47 @@ const App: React.FC = () => {
     };
   }, [autoSaveEnabled, autoSaveInterval, isAutoSaving, triggerAutoSave]);
 
+  // 未保存内容のリカバリスナップショット
+  useEffect(() => {
+    const snapshot = () => {
+      const state = useEditorStore.getState();
+      if (!state.isDirty || !state.currentDocumentId) return;
+      const doc = state.documents.find((item) => item.id === state.currentDocumentId);
+      void desktop
+        .recoverySave(state.currentDocumentId, doc?.title ?? "", state.content)
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(snapshot, 15000);
+    window.addEventListener("beforeunload", snapshot);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("beforeunload", snapshot);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized || !currentDocumentId) return;
+    const key = `recovery-checked:${currentDocumentId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    void (async () => {
+      const snapshot = await desktop.recoveryLatest(currentDocumentId).catch(() => null);
+      if (!snapshot) return;
+      if (snapshot.content === useEditorStore.getState().content) {
+        await desktop.recoveryClear(currentDocumentId).catch(() => undefined);
+        return;
+      }
+      const restore = window.confirm(
+        "前回の未保存内容が見つかりました。復元しますか？\n（キャンセルすると破棄されます）",
+      );
+      if (restore) {
+        setContent(snapshot.content);
+      } else {
+        await desktop.recoveryClear(currentDocumentId).catch(() => undefined);
+      }
+    })();
+  }, [isInitialized, currentDocumentId, setContent]);
+
   // 執筆統計（文字数差分）を日次で記録
   useEffect(() => {
     const unsub = useEditorStore.subscribe((state, prev) => {
@@ -277,31 +318,24 @@ const App: React.FC = () => {
       const delta = state.content.length - prev.content.length;
       if (delta <= 0) return;
       const today = new Date().toISOString().slice(0, 10);
-      void bumpWritingStat(today, delta, 0).catch(() => {});
+      void desktop.statsBump(today, delta, 0).catch(() => {});
     });
     return unsub;
   }, []);
 
   // 自動バックアップ
+  const backupEnabled = useBackupSettingsStore((state) => state.enabled);
+  const backupInterval = useBackupSettingsStore((state) => state.intervalMinutes);
   useEffect(() => {
-    const backup = useBackupSettingsStore.getState();
-    if (!backup.enabled) return undefined;
+    if (!backupEnabled) return undefined;
     const run = async () => {
       const s = useBackupSettingsStore.getState();
-      const docs = useEditorStore.getState().documents;
-      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-      if (s.format === "json") {
-        await exportAsJson(JSON.stringify(docs, null, 2), `backup-${stamp}.json`);
-      } else {
-        for (const d of docs) {
-          await exportAsTxt(d.content, `${(d.title || "untitled").replace(/[^a-zA-Z0-9-_]/g, "-")}-${stamp}`);
-        }
-      }
+      await desktop.workspaceBackup(s.format).catch(() => undefined);
       useBackupSettingsStore.getState().markBackup();
     };
-    const timer = window.setInterval(() => void run(), backup.intervalMinutes * 60 * 1000);
+    const timer = window.setInterval(() => void run(), backupInterval * 60 * 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [backupEnabled, backupInterval]);
 
   const formatLastSaved = (date: Date | null) => {
     if (!date) return "未保存";
@@ -311,8 +345,24 @@ const App: React.FC = () => {
     return date.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
   };
 
+  const currentDocument = documents.find((document) => document.id === currentDocumentId);
+
   const renderEditorView = () => {
     if (!zenMode && viewMode === "preview") return null;
+    if (currentDocument?.readOnly) {
+      return (
+        <section className="flex flex-1 min-w-0 flex-col" aria-label="読み取り専用のノート">
+          <div className="border-b border-amber-800/60 bg-amber-950/40 px-4 py-2 text-xs text-amber-200">
+            読み取り専用: {currentDocument.readOnlyReason ?? "このノートは直接編集できません"}
+          </div>
+          <textarea
+            value={content}
+            readOnly
+            className="flex-1 w-full resize-none bg-gray-900 p-4 font-mono text-sm leading-6 text-gray-300 focus:outline-none"
+          />
+        </section>
+      );
+    }
     return (
       <section className="flex-1 flex flex-col min-w-0" aria-label="編集領域">
         {editorMode === "markdown" ? (
@@ -397,6 +447,7 @@ const App: React.FC = () => {
               onToggleAsm={() => setAsmOpen((previous) => !previous)}
               terminalOpen={terminalOpen}
               onToggleTerminal={() => setTerminalOpen((previous) => !previous)}
+              onOpenNotes={() => setNotesOpen(true)}
               onOpenGistUpload={() => setGistUploadOpen(true)}
               onOpenGistViewer={() => setGistViewerOpen(true)}
               onOpenSettings={() => setSettingsOpen(true)}
@@ -469,7 +520,7 @@ const App: React.FC = () => {
             <button type="button" onClick={() => setSettingsOpen(true)} className="rounded p-1 text-gray-300 hover:text-white" aria-label="設定を開く" title="Settings (Ctrl+,)">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
             </button>
-            <span className="hidden sm:inline">right-stuff-editor-dash v0.5.0</span>
+            <span className="hidden sm:inline">Right-Stuff Editor Desktop</span>
           </div>
           </footer>
         )}
@@ -520,6 +571,11 @@ const App: React.FC = () => {
         </div>
       )}
 
+      <NotesBrowser
+        isOpen={notesOpen}
+        onClose={() => setNotesOpen(false)}
+        onOpenNote={(input) => openNotesDocument(input)}
+      />
       <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <GistUploadModal isOpen={gistUploadOpen} onClose={() => setGistUploadOpen(false)} />
       <GistViewer isOpen={gistViewerOpen} onClose={() => setGistViewerOpen(false)} />

@@ -1,42 +1,42 @@
-# Right-Stuff Editor Dash
+# Right-Stuff Editor Desktop
 
 <p align="center">
   <strong>リッチテキスト、Markdown、AI、ローカルLLMをひとつにした編集環境</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/watanabe3tipapa/right-stuff-editor-dash"><img src="https://img.shields.io/badge/version-v0.5.0-2563eb?style=flat-square" alt="Version v0.5.0" /></a>
+  <a href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop"><img src="https://img.shields.io/badge/version-v0.1.0-2563eb?style=flat-square" alt="Version v0.1.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/status-development-f59e0b?style=flat-square" alt="Development status" />
 </p>
 
 <p align="center">
-  <a href="#概要">概要</a> · <a href="#v050の主な変更">v0.5.0</a> · <a href="#機能">機能</a> · <a href="#クイックスタート">クイックスタート</a> · <a href="#開発と検証">開発と検証</a>
+  <a href="#概要">概要</a> · <a href="#機能">機能</a> · <a href="#クイックスタート">クイックスタート</a> · <a href="#開発と検証">開発と検証</a>
 </p>
 
-> **Right-Stuff Editor Dash** は、文章とアイデアに集中するためのローカルファースト編集環境です。リッチテキストとMarkdownを行き来し、AIの補完・変換・チャットをいつでも呼び出せます。必要なときだけLLMやスキル管理、ターミナルを開けます。
+> **Right-Stuff Editor Desktop** は、文章とアイデアに集中するための macOS 向けローカルファースト編集環境です。リッチテキストとMarkdownを行き来し、AIの補完・変換・チャットをいつでも呼び出せます。文書は指定フォルダーの Markdown ファイルとして保存され、Apple Notes の選択ノートも直接編集できます。
 
 ## 概要
 
-Right-Stuff Editor Dash は、書式を保った編集とMarkdownの可搬性を両立するエディタです。ブラウザ版では文書を端末内のIndexedDBへ保存し、Electron版ではローカルのファイル操作やOSターミナルとの連携も利用できます。AI機能は外部サービスまたはローカルLLMへ明示的に接続した場合だけ動作し、設定したAPIキーはブラウザのローカル設定として扱われます。
+Right-Stuff Editor Desktop は、書式を保った編集とMarkdownの可搬性を両立する tinyjs デスクトップアプリです。文書はワークスペース（既定: `~/Documents/Right-Stuff`）内の Markdown ファイルに保存し、メタデータ・履歴・設定・執筆統計は SQLite に保持します。Apple Notes のノートは読み取り専用判定を行ったうえで直接更新できます。AI機能は外部サービスまたはローカルLLMへ明示的に接続した場合だけ動作します。
 
 | 項目 | 内容 |
 | --- | --- |
 | 編集方式 | LexicalによるリッチテキストとMarkdownの切替 |
-| 保存先 | ブラウザのIndexedDB。クラウド同期は実装していません。 |
+| 保存先 | ワークスペース内の Markdown ファイル + アプリデータの SQLite。クラウド同期は実装していません。 |
 | AI連携 | Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、OpenRouter、Perplexity、xAI、Hugging Face、AnythingLLM、LM Studio、Foundry Local、Unsloth、Apple Foundation Models、カスタム（計18種） |
 | AI機能 | ゴーストテキスト補完、スラッシュコマンド、選択テキストのインラインAI変換、AIチャット |
 | 文体・記憶 | 文体プロファイル、エンティティメモリ（固有名詞の一貫表記） |
-| スキル管理 | Agent Skill Manager。Electronデスクトップ版のみ利用可能です。 |
-| 実行形態 | ViteによるWeb版、およびElectronデスクトップ版 |
-| 現行バージョン | **v0.5.0** |
+| スキル管理 | Agent Skill Manager（現在は無効化。ASM CLI 連携は今後の課題）。 |
+| 実行形態 | tinyjs による macOS デスクトップアプリ（Web配布なし） |
+| 現行バージョン | **v0.1.0**（tinyjs デスクトップ版） |
 | ローカルファイル連携 | 開いたファイルへの上書き保存、未保存時の離脱検知 |
 | プレビュー強化 | GitHub Alerts、Mermaid図表、シンタックスハイライト、KaTeX数式 |
-| mdv連携 | Electron版で `mdv` を起動し、高品質プレビューを別窓で表示 |
+| mdv連携 | 現在は無効（内蔵プレビューを利用） |
 
-## v0.5.0の主な変更
+## 旧 Dash 版の主な変更（アーカイブ）
 
-今回の更新では、リポジトリを **Right-Stuff Editor Dash** へ改名し、AIによる執筆支援機能を一気に拡充しました。名称は Textus に倣っています。
+以下は tinyjs デスクトップ版へ移行する前の履歴です。現行版の概要はルートの [README](../README.md) を参照してください。
 
 | 分類 | 更新内容 |
 | --- | --- |
@@ -89,7 +89,7 @@ AIはチャットだけでなく、編集中のテキストそのものにも働
 | 文体プロファイル | 名前付きのシステムプロンプトを保存・切替。有効なプロファイルは全AIリクエストに適用 |
 | エンティティメモリ | 固有名詞（人物・プロジェクト・用語・場所）を登録し、AIの表記を一貫させます |
 | AIチャット | LLMと会話。編集中の文書を文脈として自動送信可能 |
-| スキル管理 | Agent Skill Manager。スキルの検索・インストール管理（Electron版のみ） |
+| スキル管理 | Agent Skill Manager（現在は無効） |
 
 #### LLMプロバイダ（計18種）
 
@@ -109,16 +109,15 @@ Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、Op
 
 **Apple FM** は、macOSに内蔵されたオンデバイスモデル（Apple Intelligence）に接続するプロバイダーです。端末内で推論するため本文が外部に送信されず、APIキーも不要です。macOS 26以降とApple Siliconが必要です。
 
-Foundation ModelsフレームワークはSwiftからしか呼べないため、リポジトリ同梱の小さなSwiftブリッジ（`packages/editor/applefm`）が `127.0.0.1:8765` にOpenAI互換APIを公開します（`/v1/chat/completions`・`/v1/models`・`/health`、SSEストリーミング対応）。
+Foundation ModelsフレームワークはSwiftからしか呼べないため、リポジトリ同梱の小さなSwiftブリッジ（`applefm/`）が `127.0.0.1:8765` にOpenAI互換APIを公開します（`/v1/chat/completions`・`/v1/models`・`/health`、SSEストリーミング対応）。
 
 1. ブリッジを起動します。
 
    ```bash
-   cd packages/editor
    npm run applefm
    ```
 
-   Electron版では Settings → **Apple FM** の「サーバー起動」ボタンからも起動できます。
+   アプリ内からは起動しません。別ターミナルで起動したままにしてください。
 
 2. SettingsのLLM Providerで **Apple FM** を選択します（既定 `http://127.0.0.1:8765/v1/chat/completions`）。
 3. 「状態を確認」で `available` / `appleIntelligenceNotEnabled` などの状態を確認できます。
@@ -127,17 +126,17 @@ Foundation ModelsフレームワークはSwiftからしか呼べないため、�
 
 ### ローカルファイル連携
 
-開いたローカルファイル（Markdown / TXT）を編集し、そのまま**同じファイルへ上書き保存**できます。フッターに現在のファイル名が表示され、未保存のまま閉じようとすると離脱確認が出ます。ブラウザ版はFile System Access API（Chrome/Edge）、Electron版はネイティブダイアログを使います。
+ワークスペース内の Markdown / TXT を開いて編集し、そのまま保存できます。ツールバーの読み込み・書き出しは macOS のネイティブダイアログを使います。保存は一時ファイルへの書き込み後に rename する原子的な方式で、外部変更はハッシュと mtime で検出します。
 
 ### mdv連携
 
-Electronデスクトップ版では、ツールバーの **Open in mdv** ボタンからローカルで動作するmdvツールを起動し、開いている文書の高品質プレビューを別ウィンドウで表示できます。mdvはローカルファイルを監視するため、エディタでの保存が自動でプレビューに反映されます。
+mdv 連携は現在の tinyjs 版では無効です。代わりに内蔵プレビュー（GitHub Alerts / Mermaid / KaTeX / シンタックスハイライト）を利用してください。
 
-> mdv連携には `mdv` がローカルにインストールされている必要があります。未インストール時はフッターに案内が表示されます。ブラウザ版ではmdvは利用できません（内蔵の強化プレビューをご利用ください）。
+> mdv 連携を復活させる場合は、バックエンドから `mdv` を起動する API を追加する必要があります。
 
 ### 保存とエクスポート
 
-編集内容は既定で30秒ごとに端末内へ自動保存されます。保存ステータスは画面下部で確認でき、失敗時には再試行できます。ファイルの読み込み、Markdown、HTML、PDF、JSON、TXT、DOCX、Ollama Modelfileへの書き出しにも対応します。利用可否はWebとElectronで異なります。
+編集内容は既定で30秒ごとにワークスペースへ自動保存されます。保存ステータスは画面下部で確認でき、失敗時には再試行できます。ファイルの読み込み、Markdown、HTML、PDF、JSON、TXT、DOCX、Ollama Modelfileへの書き出しにも対応します。PDF は印刷ダイアログ経由です。
 
 ### GitHub Gist連携
 
@@ -150,46 +149,49 @@ Electronデスクトップ版では、ツールバーの **Open in mdv** ボタ�
 | プレビュー | Gist内容の読み取り専用表示 |
 | インポート | Gist内容をエディタに読み込み |
 
-| 機能 | Web版 | Electron版 |
-| --- | --- | --- |
-| IndexedDB自動保存 | 対応 | 対応 |
-| ローカルファイルの読込・保存 | File System Access API（Chrome/Edge）で利用 | ネイティブ連携で利用 |
-| GitHub Gist連携 | 対応 | 対応 |
-| 強化プレビュー（Alerts/Mermaid/ハイライト） | 対応 | 対応 |
-| mdv連携（Open in mdv） | 非対応 | 対応 |
-| アプリ内ターミナル | モック表示（入力の反表示のみ） | 実OSシェルを wterm + node-pty で実行 |
-| Agent Skill Manager | 閲覧のみ・機能制限 | 対応 |
+| 機能 | tinyjs デスクトップ版 |
+| --- | --- |
+| Markdown ワークスペース自動保存 | 対応 |
+| ローカルファイルの読込・保存 | ネイティブダイアログで対応 |
+| GitHub Gist連携 | 対応 |
+| 強化プレビュー（Alerts/Mermaid/KaTeX/ハイライト） | 対応 |
+| mdv連携（Open in mdv） | 未対応 |
+| アプリ内ターミナル | macOS の PTY を wterm で表示 |
+| Agent Skill Manager | 未対応（UI は非表示） |
+| Apple Notes の閲覧・編集 | 対応（権限が必要） |
+| バージョン履歴・リカバリ | SQLite に保存 |
 
 ## クイックスタート
 
-### Web版の開発起動
+### 開発起動
 
 ```bash
-git clone https://github.com/watanabe3tipapa/right-stuff-editor-dash.git
-cd right-stuff-editor-dash/packages/editor
+git clone <repo>
+cd right-stuff-editor-desktop
 npm ci
 npm run dev
 ```
 
-Viteが表示するローカルURLを開いてください。公開ページは `/`、編集画面は `/editor` です。
-
-### Electron版の開発起動
+別ターミナルで tinyjs を起動します。
 
 ```bash
-cd right-stuff-editor-dash/packages/editor
-npm ci
-npm run electron:dev
+tinyjs dev
 ```
 
-Electron版ではアプリ内ターミナル（実OSシェル）およびAgent Skill Managerを利用できます。使用するLLMやASM CLIは、別途ローカル環境にインストール・起動してください。
+Vite は `127.0.0.1:3000` で起動し、tinyjs がバックエンドとウィンドウを提供します。
 
-アプリ内ターミナルは `node-pty`（ネイティブモジュール）を使用します。macOS で `posix_spawnp failed` と表示された場合は、ヘルパーの実行権限を確認してください。
+### パッケージ
 
 ```bash
-chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper
+npm run package
+open "dist/Right-Stuff Editor Desktop.app"
 ```
 
-起動できるシェルは `process.env.SHELL`（未設定時は `/bin/bash`）です。
+`npm run package` は `tinyjs build` の後に `scripts/postbuild-macos.sh` を実行し、Apple Events の利用目的を Info.plist へ追加して ad-hoc 署名します。Apple Notes 連携にはこの手順が必須です。
+
+### アプリ内ターミナル
+
+macOS の `/usr/bin/python3` を使って PTY ブリッジを起動し、`$SHELL`（既定 `/bin/zsh`）を wterm で表示します。シェル設定によっては初回プロンプトまで数秒かかることがあります。
 
 ## 使い方
 
@@ -202,67 +204,60 @@ chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper
 7. SettingsでGitHub PATを設定し、ツールバーの「Upload to Gist」で文書をGistに保存できます。
 8. 「My Gists」ボタンでGist一覧を閲覧し、エディタにインポートできます。
 9. ローカルファイルを開くと、保存時に同じファイルへ上書きできます。フッターにファイル名が表示されます。
-10. Electron版ではツールバーの「Open in mdv」からmdvプレビューを別窓で開けます。
+10. Notes ボタンから Apple Notes のフォルダーとノートを選び、そのまま編集できます。
 
 主要なショートカットは、`Ctrl/Cmd + S` の保存、`Ctrl/Cmd + ,` の設定、`Ctrl/Cmd + Shift + Z` のZenモード、`Ctrl/Cmd + Shift + T` のタイプライターモード、`Ctrl/Cmd + Shift + A` のスキル管理、`Ctrl/Cmd + \`` のターミナル、`/` のスラッシュコマンドです。設定ではテーマ、LLMプロバイダー、エンドポイント、モデル、APIキー、AI補完、文体プロファイル、エンティティメモリ、GitHub Gist認証を管理できます。
 
 ## データとセキュリティ
 
-Right-Stuff Editor Dash は、文書をユーザーのブラウザまたはElectron環境に保存するローカルファースト設計です。IndexedDBのデータは、同じブラウザプロファイル・端末・オリジンでのみ利用できます。ブラウザデータの削除、別端末、シークレットモード、別ドメインへの移行では復元できない可能性があるため、重要な文書はエクスポートしてください。
+Right-Stuff Editor Desktop は、文書をワークスペースの Markdown ファイルへ、設定・履歴・統計をアプリデータの SQLite へ保存するローカルファースト設計です。ワークスペースをバックアップ・同期すれば別端末へ移行できます。重要な文書は定期的にエクスポートしてください。
 
 > APIキーと文章を外部LLMへ送信するかどうかは、選択したプロバイダーおよびエンドポイントに依存します。外部サービスへ接続する前に、そのサービスの利用規約とデータ取扱方針を確認してください。
 
 ## アーキテクチャ
 
 ```text
-packages/editor/
+right-stuff-editor-desktop/
 ├── src/
-│   ├── App.tsx                 # 編集画面、初回ガイド、レスポンシブ導線
-│   ├── components/
-│   │   ├── Landing/            # 公開ページ
-│   │   ├── Editor/             # LexicalとMarkdown同期
-│   │   ├── Chat/               # AIチャット
-│   │   ├── ASM/                # Agent Skill Manager
-│   │   ├── Gist/               # GitHub Gist連携（アップロード・ビューア）
-│   │   ├── Preview/            # Markdownプレビュー（Alerts/Mermaid/ハイライト）
-│   │   ├── Settings/           # テーマ・LLM・文体・メモリ・Gist設定（4タブ）
-│   │   ├── Sidebar/            # 文書管理
-│   │   ├── Terminal/           # アプリ内ターミナル（Electronはwterm、Webはモック）
-│   │   └── Toolbar/            # 表示・保存・出力・Gist・mdv操作
-│   ├── services/               # GitHub API クライアント
-│   ├── stores/                 # Zustandの状態管理
-│   └── utils/                  # IndexedDB、LLM、ファイル、mdv、Electron連携
-├── electron/                   # Electronメイン（PTY・mdv起動IPC）・preload
-├── public/wterm.wasm           # アプリ内ターミナルの描画用WASM
+│   ├── backend/
+│   │   ├── main.ts             # tinyjs API ハンドラーと初期化
+│   │   ├── workspace.ts        # Markdown CRUD、競合検出、バックアップ
+│   │   ├── db.ts               # SQLite（設定・履歴・統計・テンプレート・チャット）
+│   │   ├── notes-bridge.ts     # Apple Notes AppleScript 連携
+│   │   ├── markdown.ts         # frontmatter 解析・生成
+│   │   └── terminal.ts         # PTY ブリッジ（Python + wterm）
+│   ├── frontend/
+│   │   ├── components/         # Editor / Preview / Chat / Settings / Notes / Terminal ほか
+│   │   ├── stores/             # Zustand（文書・テーマ・ショートカット）
+│   │   └── utils/              # desktop ブリッジ、HTML⇄Markdown、LLM
+│   ├── shared/types.ts         # バックエンドとフロントエンドの共有型
+│   └── frontend/index.html
+├── scripts/postbuild-macos.sh  # Info.plist と ad-hoc 署名
+├── public/wterm.wasm           # ターミナル描画用 WASM
+├── tinyjs.json                 # tinyjs アプリ設定
 └── package.json
 ```
 
 ## 開発と検証
 
-Web版の型検査と本番ビルドには次を実行します。
+型検査・ビルド・Lint は次を実行します。
 
 ```bash
-cd packages/editor
+npm run typecheck
 npm run build
+npm run lint
 ```
 
-Electron向けのコンパイルまで確認する場合は、次を実行します。
-
-```bash
-cd packages/editor
-npm run electron:build
-```
-
-変更後は、ランディングページ、`/editor` への遷移、文書の作成・切替、リッチテキストとMarkdownの同期、保存状態、設定モーダルのEscapeキー終了を確認してください。
+アプリ全体の確認は `tinyjs dev` または `npm run package` 後に起動して行います。文書の作成・切替、自動保存、バージョン履歴、Notes の読み取り・保存、ターミナル起動を確認してください。
 
 ## 既知の制約と次の改善候補
 
-- ブラウザ版の保存はローカルで完結し、同期・共同編集・履歴復元は提供していません。
-- ASM、OSターミナル、mdv連携にはElectronとローカルの依存ツールが必要です。
-- mdv連携はElectron版のみで、`mdv` がローカルにインストールされている必要があります。
-- Web版のFile System Access APIはChrome/Edge系に限定されます（他ブラウザではダウンロード型の保存にフォールバック）。
-- Viteのプロダクションビルドは、依存関係により大きいJavaScriptチャンクの警告を出す場合があります。今後は動的インポートによる分割を検討します。
-- 既存のLexical JSON形式の古い保存データは、Markdown形式への手動移行が必要になる可能性があります。
+- 同期・共同編集は提供していません。バックアップはワークスペース内 `.right-stuff/backups` に作成されます。
+- ASM と mdv 連携は現在無効です。
+- アプリ内ターミナルは macOS のみ対応で、`/usr/bin/python3` が必要です。
+- Apple Notes 連携には macOS の自動化権限（Notes）が必要です。共有ノートなど一部は読み取り専用になります。
+- PDF 出力は印刷ダイアログ経由です（ネイティブ PDF 書き出しは今後の課題）。
+- Vite のプロダクションビルドは大きな JavaScript チャンクの警告を出します。動的インポートによる分割を検討しています。
 
 ## ライセンス
 

@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@source "../frontend/components/Landing";
+
+@theme {
+  --font-sans: Inter, "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, Monaco, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: #020617;
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}

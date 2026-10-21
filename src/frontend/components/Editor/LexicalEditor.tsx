@@ -4,7 +4,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import {
   $createHeadingNode,
   $createQuoteNode,
@@ -337,21 +337,23 @@ function ToolbarPlugin() {
 
   useEffect(() => {
     const refreshToolbar = () => {
-      const selection = $getSelection();
-      const formats: Record<string, boolean> = {};
-      if ($isRangeSelection(selection)) {
-        formats.bold = selection.hasFormat("bold");
-        formats.italic = selection.hasFormat("italic");
-        formats.underline = selection.hasFormat("underline");
-        formats.strikethrough = selection.hasFormat("strikethrough");
-        const color = $getSelectionStyleValueForProperty(selection, "color", "");
-        setActiveColor(color || null);
-        const highlight = $getSelectionStyleValueForProperty(selection, "background-color", "");
-        setActiveHighlight(highlight || null);
-        const fontSize = $getSelectionStyleValueForProperty(selection, "font-size", "");
-        setActiveFontSize(fontSize || "");
-      }
-      setActiveFormats(formats);
+      editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        const formats: Record<string, boolean> = {};
+        if ($isRangeSelection(selection)) {
+          formats.bold = selection.hasFormat("bold");
+          formats.italic = selection.hasFormat("italic");
+          formats.underline = selection.hasFormat("underline");
+          formats.strikethrough = selection.hasFormat("strikethrough");
+          const color = $getSelectionStyleValueForProperty(selection, "color", "");
+          setActiveColor(color || null);
+          const highlight = $getSelectionStyleValueForProperty(selection, "background-color", "");
+          setActiveHighlight(highlight || null);
+          const fontSize = $getSelectionStyleValueForProperty(selection, "font-size", "");
+          setActiveFontSize(fontSize || "");
+        }
+        setActiveFormats(formats);
+      });
     };
 
     const removeUpdate = editor.registerUpdateListener(refreshToolbar);

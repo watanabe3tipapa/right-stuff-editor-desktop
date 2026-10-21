@@ -102,9 +102,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         group: "template",
         description: t.description,
         onSelect: () => {
-          const doc = createDocument(t.name || "テンプレート", applyTemplate(t.content));
           onClose();
-          openDocument(doc.id);
+          void createDocument(t.name || "テンプレート", applyTemplate(t.content)).then(
+            (doc) => openDocument(doc.id),
+          );
         },
       });
     });

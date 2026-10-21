@@ -1,7 +1,95 @@
 # Right-Stuff-Editor 開発メモ
 
 **作成日:** 2026/04/07
-**ステータス:** プロトタイプ（試作段階）
+**ステータス:** v0.1.0（tinyjs デスクトップ版）
+
+---
+
+## 2026-10-21 tinyjs デスクトップ版 技術スタック
+
+Electron / Web 版から、tinyjs による macOS ネイティブ・デスクトップアプリへ移行した。以下の記録は v0.1.0 時点の実装判断と、触る際に知っておくべき技術的事項をまとめたもの。
+
+### ランタイムと構成
+
+| 項目 | 採用 | 備考 |
+|---|---|---|
+| デスクトップ基盤 | tinyjs 0.61 / txiki.js 26.6 | ネイティブ WebView + JavaScript バックエンド |
+| フロントエンド | React 18 + TypeScript + Vite 5 | `src/frontend` を Vite の root に設定 |
+| エディタ | Lexical 0.32 | Rich Text / Markdown の双方向切替 |
+| スタイル | Tailwind CSS v4 | `@tailwindcss/vite`、`@tailwindcss/typography` |
+| 永続化 | `tjs:sqlite` + Markdown ファイル | DB は WAL モード |
+| テスト | Vitest 2 | Markdown / Notes の往復テスト |
+
+- バックエンドは `src/backend/main.ts` の `export const api` にメソッドを列挙する方式。`init(app)` で DB とワークスペースを初期化し、`onWindowClosed()` で PTY を停止する。
+- フロントエンドは `window.tiny.api.call(method, params)` で呼び出す。ブリッジは `src/frontend/utils/desktop.ts` に集約し、バックエンドの生 API を画面から直接触らない。
+- バックエンドからフロントエンドへの通知は `app.push(event, data)`、受信は `tiny.api.on(event, handler)`。ターミナルは `terminal:data` / `terminal:exit` を使用。
+- Vite の `base` は `./`。ネイティブ WebView ではファイル/カスタムスキームから読み込むため、絶対 `/assets/...` を前提にしない。
+- 型は `src/shared/types.ts` をバックエンドとフロントエンドで共有する。`@/` は `src/frontend`、`@shared/` は `src/shared` の alias。
+
+### ワークスペースと Markdown
+
+- 既定の保存先は `~/Documents/Right-Stuff`。パスは SQLite の `settings.workspaceRoot` に保存し、変更時は `setRoot()` で検証してから切り替える。
+- `.md` / `.markdown` / `.txt` を再帰走査する。`.` 始まりのディレクトリと `node_modules` は除外。`.right-stuff` は予約領域。
+- 文書は YAML frontmatter + 本文。対象キーは `title` / `createdAt` / `updatedAt` / `status` / `summary` / `tags` / `gistId` / `gistUpdatedAt`。値は JSON 互換でシリアライズする。
+- パスは `relative()` で正規化し、`..`、`.right-stuff`、NUL を拒否する。ワークスペース外への読み書きを防ぐためのガード。
+- 保存は「一時ファイルへ書く → `tjs.rename()` で置換」の atomic write。失敗時は一時ファイルを削除する。
+- 競合検知は FNV-1a の内容ハッシュと mtime の両方。保存時に `expectedHash` / `expectedMtimeMs` が現在値とずれていれば `CONFLICT` を返し、フロントは再読み込みを促す。
+- 削除は物理削除ではなく `.right-stuff/trash/<timestamp>-<path>` へ rename する。
+- 一覧取得時は frontmatter を解析してタイトル・日時・タグなどを補完する。壊れたファイルは一覧からスキップし、全体を落とさない。
+
+### SQLite
+
+- 保存先は tinyjs の app data ディレクトリ配下 `right-stuff.sqlite`。`initDatabase(dir)` で `tjs:sqlite` を開き、WAL を有効化する。
+- テーブルは `settings`、`document_versions`、`writing_stats`、`templates`、`chat_sessions`、`recovery_snapshots`。
+- バージョン履歴は保存直前に旧内容を `document_versions` へ追加し、同一内容はスキップ。パスごとに最新 20 件へ prune する。
+- リカバリは最大 50 件。15 秒間隔 + `beforeunload` で未保存内容を保存し、次回起動時に最新スナップショットを提示する。
+- 設定の一部は Zustand の `persist` で localStorage に、バックエンド設定は SQLite に置く。どちらが正かはキーごとに決まっているため、移行時は注意する。
+
+### Apple Notes
+
+- `app.macos.applescript()` で Notes を操作する。`tinyjs.json` の `permissions["automation:com.apple.Notes"]` と、パッケージ後の `NSAppleEventsUsageDescription` が必須。
+- `notesHealth` で権限状態とアカウント名を確認できる。権限要求はフロントの `requestNotesPermission()` から行う。
+- ノート本文は HTML。先頭の `<div>タイトル</div>` をタイトルとして扱い、本文からは除外する。保存時はタイトル div を再付加する。
+- `password protected` / `shared` は読み取り専用。本文中の添付・表・ロック要素もパターン検出して読み取り専用理由を返す。
+- HTML → Markdown は Turndown、Markdown → HTML は unified（remark / rehype）。sanitize schema に `object` / `param` / `embed` を追加し、Notes の添付参照を落とさないようにしている。
+- 空の `<object>` は Turndown の blank 判定で消えるため、変換前にゼロ幅スペースを挿入し、変換後に除去するワークアラウンドを入れている。
+- タイトル・本文は AppleScript 文字列へ埋め込む前にバックスラッシュとダブルクォートをエスケープする。HTML タイトルは HTML エスケープする。
+
+### ターミナル
+
+- tinyjs の `tjs.spawn([command, ...args], opts)` は配列引数。`stdout` / `stderr` は WHATWG ストリームなので `getReader()` で読む。
+- tinyjs の WritableStream は最初の `write()` しかフラッシュされず、`await write()` / `writer.ready` がハングする。このため stdin は使わず、Python PTY ブリッジへ一時ファイル経由で入力を渡す方式にした。
+- ブリッジは `/usr/bin/python3 -c` で起動。`pty.fork()` 後、`$SHELL`（既定 `/bin/zsh`）を `-i` で exec する。
+- 入力は `PTY_INPUT_FILE` へ追記し、Python 側が 50ms 間隔でファイルサイズを監視して差分を PTY へ書く。リサイズは `PTY_SIZE_FILE` の mtime を監視し、`TIOCSWINSZ` を適用する。
+- 書き込みは `writeChain` で直列化し、同時入力でのファイル競合を防ぐ。停止時は一時ファイルを削除する。
+- macOS のみ対応。`/usr/bin/python3` が無い場合は起動前にエラーを返す。
+
+### AI とフロントエンド
+
+- LLM 呼び出しはフロントエンドから直接行う（バックエンド経由ではない）。OpenAI 互換 API を基本に、Ollama / LM Studio / Apple FM / 主要クラウド API を抽象化している。
+- ゴーストテキスト、スラッシュコマンド、選択範囲のインライン変換、チャット、文体プロファイル、エンティティメモリを `src/frontend/utils` と各ストアで構成。
+- Apple Foundation Models は同梱の Swift ブリッジ `applefm/` を `npm run applefm` で起動し、`127.0.0.1:8765` の OpenAI 互換 API へ接続する。アプリからは起動しない。
+- ASM（Agent Skill Manager）と mdv は capability フラグで無効化している。UI 導線を復活させる場合は `src/frontend/utils/capabilities.ts` とバックエンド API の追加が必要。
+- グローバル例外は `src/frontend/main.tsx` で捕捉し、`clientLog` API 経由でバックエンドのログへ送る。
+- 保存状態は `editorStore` の `saveStatus` と `lastPersistedContent` で管理。保存成功時に旧内容を履歴へ追加し、リカバリをクリアする。
+- バックアップ設定は Zustand の persist。`App.tsx` の interval は設定変更を購読して再設定する。
+
+### パッケージと配布
+
+- `npm run package` = `tinyjs build` + `scripts/postbuild-macos.sh`。
+- postbuild は `Info.plist` に `NSAppleEventsUsageDescription` を追加し、`codesign --force --deep --sign -` で ad-hoc 署名する。これを省くと Apple Notes の自動化が失敗する。
+- 出力は `dist/Right-Stuff Editor Desktop.app`。arm64 のみ。Intel / Universal は未対応。
+- `npm test` は `src/frontend/utils/markdown.test.ts` を実行する。ビルドは `tsc`（frontend + backend）→ `vite build`。
+- ランディングページは `src/landing` を `vite.landing.config.ts` で `site/` へビルドし、`.github/workflows/pages.yml` が GitHub Pages へデプロイする。アプリ本体は Web 配信しない。
+
+### 触る際の注意
+
+1. `window.electronAPI` は存在しない。Electron 前提のコードや `node-pty` を復活させない。
+2. tinyjs の API 型は `src/backend/tiny.d.ts` / `tjs.d.ts` を参照する。推測で API を追加しない。
+3. PTY の stdin を直接使わない。現行の一時ファイル方式を維持する。
+4. Notes の保存は本文全体を置換する。部分更新ではないため、読み取り専用判定とタイトル div の扱いを崩さない。
+5. ワークスペースのパスは必ず `relative()` を通す。`..` や `.right-stuff` を許可しない。
+6. 設定キーの一部は localStorage に残っている。名称変更時は移行を入れる。
 
 ---
 

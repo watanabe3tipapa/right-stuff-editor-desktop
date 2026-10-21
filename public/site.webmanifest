@@ -1,19 +1,19 @@
 {
-  "name": "Right-Stuff Editor Dash",
-  "short_name": "RSE Dash",
-  "description": "リッチテキスト、Markdown、ローカルAIをひとつにした編集環境",
-  "start_url": "/",
+  "name": "Right-Stuff Editor Desktop",
+  "short_name": "Right-Stuff",
+  "description": "Markdown、Apple Notes、AI をひとつにした macOS 向けローカルファースト・エディタ",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/apple-touch-icon.png",
+      "src": "./apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/favicon.ico",
+      "src": "./favicon.ico",
       "sizes": "32x32",
       "type": "image/x-icon"
     }

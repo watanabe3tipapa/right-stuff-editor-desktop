@@ -19,6 +19,14 @@ export interface EditorDocument {
   tags?: string[];
   gistId?: string;
   gistUpdatedAt?: string;
+  mtimeMs?: number;
+  hash?: string;
+  source?: 'workspace' | 'notes';
+  notesId?: string;
+  notesAccount?: string;
+  notesFolder?: string;
+  readOnly?: boolean;
+  readOnlyReason?: string;
 }
 
 export interface DocumentTemplate {

@@ -20,6 +20,7 @@ interface ToolbarProps {
   onToggleAsm?: () => void;
   terminalOpen: boolean;
   onToggleTerminal: () => void;
+  onOpenNotes?: () => void;
   onOpenGistUpload?: () => void;
   onOpenGistViewer?: () => void;
   onOpenSettings?: () => void;
@@ -37,6 +38,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleAsm,
   terminalOpen,
   onToggleTerminal,
+  onOpenNotes,
   onOpenGistUpload,
   onOpenGistViewer,
   onOpenSettings,
@@ -377,6 +379,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
 
         <div className="w-px h-6 bg-gray-700 mx-1" />
+
+        {/* Apple Notes */}
+        <button
+          onClick={onOpenNotes}
+          className="p-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+          title="Apple Notes を開く"
+          aria-label="Apple Notes を開く"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4h10a2 2 0 012 2v14l-7-3-7 3V6a2 2 0 012-2z" />
+          </svg>
+        </button>
 
         {/* Gist Upload button */}
         <button

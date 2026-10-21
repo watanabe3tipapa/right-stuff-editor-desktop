@@ -5,10 +5,6 @@ interface TerminalProps {
   onClose: () => void;
 }
 
-const isElectron = (): boolean => {
-  return typeof window !== "undefined" && !!window.electronAPI?.isElectron;
-};
-
 const mockCommands: Record<string, string> = {
   help: "Available commands: help, echo, date, clear, version, whoami, ls, pwd, main, open, neo, beos, osx, qe, te",
   echo: "Usage: echo <message>",
@@ -122,24 +118,17 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<string[]>([
     "Right-Stuff-Editor Terminal",
-    isElectron()
-      ? "Connected to system terminal (Terminal.app)"
-      : "Type 'help' for available commands",
+    "Type 'help' for available commands",
     "",
   ]);
-  const [electronLaunched, setElectronLaunched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      if (isElectron() && !electronLaunched) {
-        window.electronAPI?.openTerminal?.();
-        setElectronLaunched(true);
-      }
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, electronLaunched]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -175,11 +164,6 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
       return new Date().toISOString();
     }
 
-    if (trimmedCmd === "relaunch" && isElectron()) {
-      window.electronAPI?.openTerminal?.();
-      return "Terminal relaunched.";
-    }
-    
     if (trimmedCmd === "main") {
       window.open("https://watanabe3ti.com", "_blank");
       return mockCommands.main;
@@ -241,14 +225,6 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
     setInput("");
   };
 
-  const handleRelaunch = () => {
-    if (isElectron()) {
-      window.electronAPI?.openTerminal?.();
-      const newHistory = [...history, "$ relaunch", "Terminal relaunched.", ""];
-      setHistory(newHistory);
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -256,18 +232,9 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
       <style>{terminalStyles}</style>
       <div className="terminal-header">
         <span className="terminal-title">
-          {isElectron() ? "Terminal (System)" : "Terminal (Mock)"}
+          Terminal (Mock)
         </span>
         <div className="flex items-center gap-2">
-          {isElectron() && (
-            <button
-              onClick={handleRelaunch}
-              className="text-xs px-2 py-0.5 bg-[#21262d] hover:bg-[#30363d] rounded text-[#8b949e] hover:text-[#c9d1d9] transition-colors"
-              title="Relaunch system terminal"
-            >
-              ↻
-            </button>
-          )}
           <button className="terminal-close" onClick={onClose} title="Close">
             ×
           </button>
@@ -279,16 +246,6 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
             {line}
           </div>
         ))}
-        {isElectron() && (
-          <div className="terminal-line terminal-output" style={{ marginTop: "8px", padding: "8px", border: "1px solid #30363d", borderRadius: "4px", backgroundColor: "#161b22" }}>
-            <div style={{ color: "#7ee787", fontWeight: 600, marginBottom: "4px" }}>● System Terminal Active</div>
-            <div style={{ color: "#8b949e", fontSize: "11px" }}>
-              Terminal.app has been launched as a separate window.<br />
-              Use the system terminal for shell commands.<br />
-              Type <span style={{ color: "#c9d1d9" }}>relaunch</span> to open a new terminal window.
-            </div>
-          </div>
-        )}
       </div>
       <form className="terminal-input-wrapper" onSubmit={handleSubmit}>
         <span className="terminal-input-prompt">$</span>
@@ -298,7 +255,7 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
           className="terminal-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={isElectron() ? "Type 'relaunch' to open terminal..." : "Enter command..."}
+          placeholder="Enter command..."
           autoComplete="off"
         />
       </form>

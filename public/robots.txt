@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://right-stuff-editor-dash.vercel.app/sitemap.xml
+Sitemap: https://watanabe3tipapa.github.io/right-stuff-editor-desktop/sitemap.xml

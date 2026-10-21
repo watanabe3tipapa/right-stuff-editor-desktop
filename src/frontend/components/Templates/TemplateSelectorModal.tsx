@@ -125,9 +125,10 @@ export const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const doc = createDocument(t.name, applyTemplate(t.content));
                         onClose();
-                        openDocument(doc.id);
+                        void createDocument(t.name, applyTemplate(t.content)).then((doc) =>
+                          openDocument(doc.id),
+                        );
                       }}
                       className="shrink-0 rounded-lg bg-gray-700 px-3 py-1.5 text-xs text-gray-200 hover:bg-gray-600"
                     >

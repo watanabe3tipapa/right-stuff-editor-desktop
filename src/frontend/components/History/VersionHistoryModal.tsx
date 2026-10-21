@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { listVersions } from "@/utils/db";
-import type { DBDocumentVersion } from "@/utils/db";
+import { desktop } from "@/utils/desktop";
+import type { DocumentVersion } from "@shared/types";
 import { useEditorStore } from "@/stores/editorStore";
 
 interface VersionHistoryModalProps {
@@ -16,13 +16,13 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   onClose,
   onRestore,
 }) => {
-  const [versions, setVersions] = useState<DBDocumentVersion[]>([]);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const { saveDocument, setContent } = useEditorStore();
 
   useEffect(() => {
     if (!isOpen || !docUuid) return;
     void (async () => {
-      const rows = await listVersions(docUuid, 10);
+      const rows = await desktop.versionsList(docUuid, 10);
       setVersions(rows);
     })();
   }, [isOpen, docUuid]);

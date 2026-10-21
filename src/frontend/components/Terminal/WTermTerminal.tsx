@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Terminal, type TerminalHandle } from "@wterm/react";
 import TerminalMock from "./Terminal";
 import { getActiveFileInfo } from "@/utils/fileOperations";
+import { desktop } from "@/utils/desktop";
+import { isDesktop as isDesktopEnvironment } from "@/utils/capabilities";
 
 interface WTermTerminalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const isElectron = (): boolean => {
-  return typeof window !== "undefined" && !!window.electronAPI?.isElectron;
-};
+
 
 /** 編集中のファイルがあるならそのディレクトリを、なければ undefined を返す。 */
 const resolveCwd = (): string | undefined => {
@@ -32,7 +32,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
   const [shellName, setShellName] = useState<string | null>(null);
   const [size, setSize] = useState({ cols: 80, rows: 24 });
 
-  const isDesktop = isElectron();
+  const isDesktop = isDesktopEnvironment();
 
   // wterm の初期化は非同期なので、準備完了前の出力はバッファしておく
   const readyRef = useRef(false);
@@ -62,13 +62,6 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
   useEffect(() => {
     if (!isOpen || !isDesktop) return;
 
-    const api = window.electronAPI;
-    if (!api?.startPty) {
-      setStatus("error");
-      setError("この環境ではアプリ内ターミナルを利用できません。");
-      return;
-    }
-
     let disposed = false;
     const unsubscribes: Array<() => void> = [];
 
@@ -76,20 +69,16 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
     setError(null);
 
     // 出力の購読を先に登録してから起動し、初期プロンプトの取りこぼしを防ぐ
-    if (api.onPtyData) {
-      unsubscribes.push(api.onPtyData(write));
-    }
-    if (api.onPtyExit) {
-      unsubscribes.push(
-        api.onPtyExit((exitCode) => {
-          write(`\r\n[process exited with code ${exitCode}]\r\n`);
-          setStatus("idle");
-        }),
-      );
-    }
+    unsubscribes.push(desktop.onTerminalData(write));
+    unsubscribes.push(
+      desktop.onTerminalExit((exitCode) => {
+        write(`\r\n[process exited with code ${exitCode}]\r\n`);
+        setStatus("idle");
+      }),
+    );
 
-    void api
-      .startPty(size.cols, size.rows, resolveCwd())
+    void desktop
+      .terminalStart(size.cols, size.rows, resolveCwd())
       .then((result) => {
         if (disposed) return;
         if (!result.success) {
@@ -109,7 +98,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
     return () => {
       disposed = true;
       unsubscribes.forEach((unsubscribe) => unsubscribe());
-      void api.stopPty?.();
+      void desktop.terminalStop();
     };
     // size は起動時のみ参照し、リサイズでは再起動しない
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,7 +107,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
   // サイズ変化を PTY へ通知する
   useEffect(() => {
     if (!isOpen || !isDesktop || status !== "running") return;
-    void window.electronAPI?.resizePty?.(size.cols, size.rows);
+    void desktop.terminalResize(size.cols, size.rows);
   }, [size.cols, size.rows, isOpen, isDesktop, status]);
 
   if (!isOpen) return null;
@@ -149,13 +138,13 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
       <div className="min-h-0 flex-1 p-2">
         <Terminal
           ref={termRef}
-          wasmUrl="/wterm.wasm"
+          wasmUrl={`${import.meta.env.BASE_URL}wterm.wasm`}
           autoResize
           cursorBlink
           theme="dark"
           style={{ height: "100%", width: "100%" }}
           onData={(data) => {
-            void window.electronAPI?.writePty?.(data);
+            void desktop.terminalWrite(data);
           }}
           onResize={(cols, rows) => {
             setSize({ cols, rows });

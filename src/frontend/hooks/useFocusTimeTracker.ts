@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { bumpWritingStat } from "@/utils/db";
+import { desktop } from "@/utils/desktop";
 import { useTimeTrackingStore } from "@/stores/timeTrackingStore";
 
 const ymd = () => new Date().toISOString().slice(0, 10);
@@ -20,7 +20,7 @@ export const useFocusTimeTracker = () => {
       const delta = Date.now() - sessionStartRef.current;
       sessionStartRef.current = null;
       if (delta > 0) {
-        void bumpWritingStat(ymd(), 0, delta).catch(() => {});
+        void desktop.statsBump(ymd(), 0, delta).catch(() => {});
       }
     };
 

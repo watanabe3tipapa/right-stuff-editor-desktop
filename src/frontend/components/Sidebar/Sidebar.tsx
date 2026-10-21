@@ -9,6 +9,7 @@ import { extractSummary } from "@/utils/markdown";
 import { cosineSimilarityTexts } from "@/utils/similarity";
 import { generateDocumentSummary } from "@/utils/documentAI";
 import { supportsAsm } from "@/utils/capabilities";
+import { desktop } from "@/utils/desktop";
 import { WritingStatsWidget } from "@/components/Stats";
 import { DocumentQuickPreview } from "./DocumentQuickPreview";
 import type { EditorDocument } from "@/types";
@@ -39,6 +40,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     duplicateDocument,
     updateDocumentTitle,
     updateDocumentMeta,
+    workspaceRoot,
+    reloadFromDisk,
   } = useEditorStore();
   const { load: loadTemplates } = useTemplateStore();
   const { filter, density, setFilter } = useDocumentFilterStore();
@@ -254,6 +257,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={async () => {
+            const path = await desktop.pickFolder();
+            if (!path) return;
+            await desktop.workspaceChooseRoot(path);
+            await reloadFromDisk();
+          }}
+          className="mt-2 flex w-full items-center gap-1 truncate rounded px-1 py-1 text-left text-[10px] text-gray-400 hover:bg-gray-700/60 hover:text-gray-200"
+          title={workspaceRoot ?? "ワークスペースを選択"}
+        >
+          <svg className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+          </svg>
+          <span className="truncate">{workspaceRoot?.split("/").pop() ?? "ワークスペース"}</span>
+        </button>
         <div className="mt-2 grid grid-cols-3 gap-1 text-[11px]">
           <button
             type="button"

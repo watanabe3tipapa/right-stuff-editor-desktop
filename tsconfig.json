@@ -22,6 +22,6 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/frontend", "src/shared"],
+  "include": ["src/frontend", "src/landing", "src/shared"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

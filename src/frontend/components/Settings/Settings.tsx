@@ -156,9 +156,7 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const [showPat, setShowPat] = useState(false);
   const [appleFMHealth, setAppleFMHealth] = useState<AppleFMHealth | null>(null);
   const [appleFMChecking, setAppleFMChecking] = useState(false);
-  const [appleFMBusy, setAppleFMBusy] = useState(false);
   const [appleFMError, setAppleFMError] = useState<string | null>(null);
-  const [appleFMPid, setAppleFMPid] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Style profile editing state
@@ -257,39 +255,6 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     if (!isOpen || provider !== "applefm") return;
     void checkAppleFM();
   }, [isOpen, provider, checkAppleFM]);
-
-  const startAppleFM = async () => {
-    const api = window.electronAPI;
-    if (!api?.startAppleFM) return;
-    setAppleFMBusy(true);
-    setAppleFMError(null);
-    try {
-      const result = await api.startAppleFM(APPLEFM_DEFAULT_PORT);
-      if (!result.success) {
-        setAppleFMError(result.error ?? "サーバーを起動できませんでした。");
-        setAppleFMPid(null);
-      } else {
-        setAppleFMPid(result.pid ?? null);
-      }
-    } finally {
-      setAppleFMBusy(false);
-      void checkAppleFM();
-    }
-  };
-
-  const stopAppleFM = async () => {
-    const api = window.electronAPI;
-    if (!api?.stopAppleFM) return;
-    setAppleFMBusy(true);
-    setAppleFMError(null);
-    try {
-      await api.stopAppleFM();
-    } finally {
-      setAppleFMBusy(false);
-      setAppleFMHealth(null);
-      setAppleFMPid(null);
-    }
-  };
 
   const startEditStyle = (profile: WritingStyleProfile) => {
     setEditingStyleId(profile.id);
@@ -644,34 +609,9 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                       <button type="button" onClick={checkAppleFM} disabled={appleFMChecking} className={btnClass}>
                         状態を確認
                       </button>
-                      {window.electronAPI?.startAppleFM && (
-                        <button
-                          type="button"
-                          onClick={startAppleFM}
-                          disabled={appleFMBusy}
-                          className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-300 transition-colors hover:bg-blue-600/20 disabled:opacity-50"
-                        >
-                          サーバー起動
-                        </button>
-                      )}
-                      {window.electronAPI?.stopAppleFM && (
-                        <button
-                          type="button"
-                          onClick={stopAppleFM}
-                          disabled={appleFMBusy}
-                          className="rounded-lg border border-red-600 px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-600/20 disabled:opacity-50"
-                        >
-                          サーバー停止
-                        </button>
-                      )}
                     </div>
-                    {appleFMPid !== null && (
-                      <p className="text-xs text-gray-500">
-                        プロセスID: <code className="text-gray-400">PID {appleFMPid}</code>
-                      </p>
-                    )}
                     <p className="text-xs text-gray-500">
-                      ブラウザ版では <code className="text-gray-400">npm run applefm</code> でサーバーを起動してください。
+                      別ターミナルで <code className="text-gray-400">npm run applefm</code> を実行してサーバーを起動してください。
                     </p>
                   </div>
                 </fieldset>

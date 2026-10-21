@@ -93,7 +93,7 @@ const components: Components = {
       </blockquote>
     );
   },
-  code: ({ node, className, children, ...props }) => {
+  code: ({ node: _node, className, children, ...props }) => {
     const isBlock = Boolean(className);
     const match = /language-(\w+)/.exec(className || "");
     if (isBlock && match && match[1] === "mermaid") {

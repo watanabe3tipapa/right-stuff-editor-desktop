@@ -3,9 +3,20 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeStringify from 'rehype-stringify';
 import rehypeHighlight from 'rehype-highlight';
+
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), 'object', 'param', 'embed'],
+  attributes: {
+    ...defaultSchema.attributes,
+    object: ['data', 'type', 'width', 'height'],
+    param: ['name', 'value'],
+    embed: ['src', 'type', 'width', 'height'],
+  },
+};
 
 // Create processor instances
 const processor = unified()
@@ -13,7 +24,7 @@ const processor = unified()
   .use(remarkGfm)
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeRaw)
-  .use(rehypeSanitize)
+  .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeHighlight, { detect: true, ignoreMissing: true })
   .use(rehypeStringify);
 

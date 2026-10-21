@@ -119,7 +119,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               AIの補完・変換・チャット、文体プロファイル、スキル管理、ターミナル、Gist 連携などを統合しています。
             </p>
             <a
-              href="https://github.com/watanabe3tipapa/right-stuff-editor-dash"
+              href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-block text-sm text-blue-400 hover:text-blue-300 underline underline-offset-2"
