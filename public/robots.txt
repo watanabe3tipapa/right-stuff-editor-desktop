@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://right-stuff-editor-dash.vercel.app/sitemap.xml

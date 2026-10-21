@@ -1,0 +1,22 @@
+{
+  "$schema": "https://tinyjs.app/schema/tinyjs.schema.json",
+  "name": "right-stuff-editor-desktop",
+  "title": "Right-Stuff Editor Desktop",
+  "size": "1400x900",
+  "id": "com.watanabe3ti.right-stuff-editor-desktop",
+  "version": "0.1.0",
+  "backend": "src/backend/main.ts",
+  "frontend": {
+    "build": "npm run build",
+    "dist": "dist",
+    "dev": "npm run dev",
+    "devUrl": "http://127.0.0.1:3000",
+    "reload": false
+  },
+  "fileExtensions": ["md", "markdown", "txt"],
+  "openFolders": true,
+  "readAccess": true,
+  "permissions": {
+    "automation:com.apple.Notes": "Right-Stuff Editor reads and edits notes you choose in Apple Notes."
+  }
+}
