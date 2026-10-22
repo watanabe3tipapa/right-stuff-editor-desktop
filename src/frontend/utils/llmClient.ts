@@ -192,9 +192,16 @@ const readErrorMessage = async (response: Response): Promise<string> => {
 export const sendChatRequest = async (
   messages: LLMMessage[],
   callbacks: StreamCallbacks,
+  externalSignal?: AbortSignal,
 ): Promise<AbortController> => {
   const config = getLLMConfig();
   const controller = new AbortController();
+  const signal = externalSignal ?? controller.signal;
+  const abortFromExternal = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", abortFromExternal);
+  }
 
   const requestBody: LLMRequest = {
     model: config.model,
@@ -212,7 +219,7 @@ export const sendChatRequest = async (
         ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
       },
       body: JSON.stringify(requestBody),
-      signal: controller.signal,
+      signal,
     });
 
     if (!response.ok) {
@@ -292,9 +299,28 @@ export const sendChatRequest = async (
     if ((error as Error).name !== "AbortError") {
       callbacks.onError(error as Error);
     }
+  } finally {
+    externalSignal?.removeEventListener("abort", abortFromExternal);
   }
 
   return controller;
+};
+
+/** エンドポイントへ到達できるかの軽量チェック（HTTP 応答があれば到達可能とみなす） */
+export const probeLLMEndpoint = async (
+  endpoint: string,
+): Promise<{ ok: boolean; detail: string }> => {
+  const base = endpoint
+    .replace(/\/chat\/completions$/, "")
+    .replace(/\/v1$/, "")
+    .replace(/\/$/, "");
+  if (!base) return { ok: false, detail: "エンドポイントが未設定です" };
+  try {
+    const response = await fetch(base, { method: "GET" });
+    return { ok: true, detail: `HTTP ${response.status}` };
+  } catch (error) {
+    return { ok: false, detail: (error as Error).message || "接続できませんでした" };
+  }
 };
 
 export const sendNonStreamRequest = async (

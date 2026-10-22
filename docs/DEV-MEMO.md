@@ -71,6 +71,12 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 
 ### AI とフロントエンド
 
+- AI アシスタント（`components/Chat/ChatPanel.tsx`）は日本語 UI。ヘッダーにモデル名・プロバイダ・接続状態を出し、クリックで接続確認できる。
+- チャットは「送信前の履歴」を控えてからリクエストを組み立てる。送信後にストアを読むと直前の user 発言が二重に送られる。
+- 生成の停止は `AbortController` をストアで保持して行う。フラグだけ消すとストリームが続き、停止後も応答が追記される。
+- 入力欄の Enter 送信は IME 変換中（`isComposing` / `keyCode === 229`）を除外する。日本語入力では変換の確定 Enter が誤送信になる。
+- `llmClient.sendChatRequest` は外部 `AbortSignal` を受け取れる。`probeLLMEndpoint` はベース URL に GET して到達確認だけ行う（応答があれば到達可能とみなす）。
+- 文書差し替えは Rich Text モードのみ。`editorBridge.replaceSelectionWithText` は選択が無ければ `false` を返す。
 - LLM 呼び出しはフロントエンドから直接行う（バックエンド経由ではない）。OpenAI 互換 API を基本に、Ollama / LM Studio / Apple FM / 主要クラウド API を抽象化している。
 - ゴーストテキスト、スラッシュコマンド、選択範囲のインライン変換、チャット、文体プロファイル、エンティティメモリを `src/frontend/utils` と各ストアで構成。
 - Apple Foundation Models は同梱の Swift ブリッジ `applefm/` を `npm run applefm` で起動し、`127.0.0.1:8765` の OpenAI 互換 API へ接続する。アプリからは起動しない。

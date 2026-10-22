@@ -530,10 +530,10 @@ const App: React.FC = () => {
         <aside className={isMobile ? "fixed inset-y-0 right-0 z-40 w-full max-w-sm border-l border-gray-700 bg-gray-900 shadow-2xl" : "border-l border-gray-700 flex-shrink-0"} aria-label="補助パネル">
           {chatOpen && asmVisible ? (
             <div className={isMobile ? "flex h-full flex-col overflow-auto" : "flex h-full flex-row"}>
-              <div className={isMobile ? "min-h-[50%]" : "w-[350px]"}><ChatPanel /></div>
+              <div className={isMobile ? "min-h-[50%]" : "w-[350px]"}><ChatPanel onOpenSettings={() => setSettingsOpen(true)} /></div>
               <div className={isMobile ? "min-h-[50%] border-t border-gray-700" : "w-[350px] border-l border-gray-700"}><ASMPanel /></div>
             </div>
-          ) : chatOpen ? <div className="h-full w-[350px] max-w-full"><ChatPanel /></div> : <div className="h-full w-[350px] max-w-full"><ASMPanel /></div>}
+          ) : chatOpen ? <div className="h-full w-[350px] max-w-full"><ChatPanel onOpenSettings={() => setSettingsOpen(true)} /></div> : <div className="h-full w-[350px] max-w-full"><ASMPanel /></div>}
         </aside>
       )}
 

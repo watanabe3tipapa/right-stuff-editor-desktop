@@ -13,6 +13,10 @@ interface ChatStore extends ChatState {
 
   // Actions
   sendMessage: (message: Message, assistantMessageId: string) => void;
+  startAssistantReply: (assistantMessageId: string) => void;
+  removeMessage: (id: string) => void;
+  abortController: AbortController | null;
+  setAbortController: (controller: AbortController | null) => void;
   updateStreamingMessage: (id: string, content: string) => void;
   cancelStream: () => void;
   clearMessages: () => void;
@@ -48,6 +52,13 @@ const reviveSessions = (sessions: ChatSession[]): ChatSession[] =>
     messages: reviveMessages(session.messages),
   }));
 
+/** 最初のユーザー発言からセッション名を作る */
+const deriveTitle = (content: string): string => {
+  const normalized = content.trim().replace(/\s+/g, " ");
+  if (!normalized) return "New Chat";
+  return normalized.length > 28 ? `${normalized.slice(0, 28)}…` : normalized;
+};
+
 const createDefaultSession = (): ChatSession => ({
   id: generateId(),
   title: "New Chat",
@@ -56,6 +67,8 @@ const createDefaultSession = (): ChatSession => ({
   updatedAt: new Date(),
 });
 
+const initialSession = createDefaultSession();
+
 export const useChatStore = create<ChatStore>()(
   persist(
     (set, get) => ({
@@ -63,14 +76,30 @@ export const useChatStore = create<ChatStore>()(
       messages: [],
       isStreaming: false,
       currentId: null,
-      sessions: [createDefaultSession()],
-      currentSessionId: null,
+      sessions: [initialSession],
+      currentSessionId: initialSession.id,
       includeDocument: true,
+      abortController: null,
 
       setIncludeDocument: (include) => set({ includeDocument: include }),
 
+      setAbortController: (controller) => set({ abortController: controller }),
+
+      removeMessage: (id: string) => {
+        set((state) => {
+          const updatedMessages = state.messages.filter((msg) => msg.id !== id);
+          const updatedSessions = state.sessions.map((session) =>
+            session.id === state.currentSessionId
+              ? { ...session, messages: updatedMessages, updatedAt: new Date() }
+              : session,
+          );
+          return { messages: updatedMessages, sessions: updatedSessions };
+        });
+      },
+
       sendMessage: (message: Message, assistantMessageId: string) => {
         const { currentSessionId, sessions } = get();
+        const sessionId = currentSessionId ?? sessions[0]?.id ?? null;
 
         // Create assistant placeholder message
         const assistantMessage: Message = {
@@ -85,9 +114,14 @@ export const useChatStore = create<ChatStore>()(
 
           // Update current session's messages
           const updatedSessions = sessions.map((session) => {
-            if (session.id === currentSessionId) {
+            if (session.id === sessionId) {
               return {
                 ...session,
+                // 最初のメッセージならセッション名を自動生成する
+                title:
+                  session.messages.length === 0
+                    ? deriveTitle(message.content)
+                    : session.title,
                 messages: updatedMessages,
                 updatedAt: new Date(),
               };
@@ -95,6 +129,31 @@ export const useChatStore = create<ChatStore>()(
             return session;
           });
 
+          return {
+            messages: updatedMessages,
+            sessions: updatedSessions,
+            isStreaming: true,
+            currentId: assistantMessageId,
+          };
+        });
+      },
+
+      startAssistantReply: (assistantMessageId: string) => {
+        const { currentSessionId, sessions } = get();
+        const sessionId = currentSessionId ?? sessions[0]?.id ?? null;
+        const assistantMessage: Message = {
+          id: assistantMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        };
+        set((state) => {
+          const updatedMessages = [...state.messages, assistantMessage];
+          const updatedSessions = state.sessions.map((session) =>
+            session.id === sessionId
+              ? { ...session, messages: updatedMessages, updatedAt: new Date() }
+              : session,
+          );
           return {
             messages: updatedMessages,
             sessions: updatedSessions,
@@ -129,15 +188,32 @@ export const useChatStore = create<ChatStore>()(
       },
 
       cancelStream: () => {
-        set({ isStreaming: false, currentId: null });
+        const controller = get().abortController;
+        if (controller) {
+          try {
+            controller.abort();
+          } catch {
+            // 既に abort 済み
+          }
+        }
+        set({ isStreaming: false, currentId: null, abortController: null });
       },
 
       clearMessages: () => {
         const { currentSessionId, sessions } = get();
+        const controller = get().abortController;
+        if (controller) {
+          try {
+            controller.abort();
+          } catch {
+            // 既に abort 済み
+          }
+        }
         set({
           messages: [],
           isStreaming: false,
           currentId: null,
+          abortController: null,
           sessions: sessions.map((session) =>
             session.id === currentSessionId
               ? { ...session, messages: [], updatedAt: new Date() }
@@ -151,6 +227,7 @@ export const useChatStore = create<ChatStore>()(
       },
 
       createSession: () => {
+        get().cancelStream();
         const newSession = createDefaultSession();
         set((state) => ({
           sessions: [newSession, ...state.sessions],
@@ -163,6 +240,7 @@ export const useChatStore = create<ChatStore>()(
       },
 
       switchSession: (id: string) => {
+        get().cancelStream();
         const session = get().sessions.find((s) => s.id === id);
         if (session) {
           set({
