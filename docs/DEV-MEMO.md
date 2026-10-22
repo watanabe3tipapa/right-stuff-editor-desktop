@@ -65,6 +65,9 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - リサイズは `PTY_SIZE_FILE` の mtime を監視し、`TIOCSWINSZ` を適用する。
 - 起動 API は最初の出力後 250ms 沈黙するまで待って返す（最大 5 秒）。これにより zsh の初期化中に UI が `running` になって入力を取りこぼすのを減らす。
 - macOS のみ対応。`/usr/bin/python3` が無い場合は起動前にエラーを返す。
+- **パッケージ版はページが `file://` で配信されるため `fetch()` でローカルファイルを読み込めない。** wterm は WASM を `fetch(wasmUrl)` で取得するので、`wasmUrl` を渡すと初期化に失敗して画面が空白のままになる（`running` 表示だけになり、キー入力はエディタ側へ流れる）。`wasmUrl` を渡さずインライン WASM（`@wterm/core` の `WASM_BASE64`）を使う。
+- wterm の `onError`（WASM 読み込み失敗など）を `running` で上書きしないこと。初期化エラーを保持して `error` 表示にする。
+- wterm はスクロールバックが増えるとビューが先頭のまま止まり、プロンプトが画面外になる。出力時は最下部へスクロールし、ユーザーが上へスクロールした場合だけ追従をやめる。
 
 ### AI とフロントエンド
 

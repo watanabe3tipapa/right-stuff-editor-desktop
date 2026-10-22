@@ -42,6 +42,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
   const sizeRef = useRef(size);
   const runIdRef = useRef(0);
   const scrolledUpRef = useRef(false);
+  const wtermErrorRef = useRef<string | null>(null);
   const scrollCleanupRef = useRef<(() => void) | null>(null);
   statusRef.current = status;
   sizeRef.current = size;
@@ -86,6 +87,11 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
     try {
       const result = await desktop.terminalStart(sizeRef.current.cols, sizeRef.current.rows, resolveCwd());
       if (runId !== runIdRef.current) return;
+      if (wtermErrorRef.current) {
+        setStatus("error");
+        setError(wtermErrorRef.current);
+        return;
+      }
       if (!result.success) {
         setStatus("error");
         setError(result.error ?? "シェルを起動できませんでした。");
@@ -206,7 +212,6 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
       <div className="min-h-0 flex-1 p-2">
         <Terminal
           ref={termRef}
-          wasmUrl={`${import.meta.env.BASE_URL}wterm.wasm`}
           autoResize
           cursorBlink
           theme="dark"
@@ -217,6 +222,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
           }}
           onReady={() => {
             readyRef.current = true;
+            wtermErrorRef.current = null;
             const buffered = pendingRef.current;
             pendingRef.current = [];
             const element = termRef.current?.instance?.element;
@@ -233,8 +239,10 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
             termRef.current?.focus();
           }}
           onError={(err) => {
+            const message = err instanceof Error ? err.message : String(err);
+            wtermErrorRef.current = message;
             setStatus("error");
-            setError(err instanceof Error ? err.message : String(err));
+            setError(message);
           }}
         />
       </div>
