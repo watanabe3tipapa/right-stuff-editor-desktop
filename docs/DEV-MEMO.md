@@ -60,8 +60,10 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - tinyjs の `tjs.spawn([command, ...args], opts)` は配列引数。`stdout` / `stderr` は WHATWG ストリームなので `getReader()` で読む。
 - tinyjs の WritableStream は最初の `write()` しかフラッシュされず、`await write()` / `writer.ready` がハングする。このため stdin は使わず、Python PTY ブリッジへ一時ファイル経由で入力を渡す方式にした。
 - ブリッジは `/usr/bin/python3 -c` で起動。`pty.fork()` 後、`$SHELL`（既定 `/bin/zsh`）を `-i` で exec する。
-- 入力は `PTY_INPUT_FILE` へ追記し、Python 側が 50ms 間隔でファイルサイズを監視して差分を PTY へ書く。リサイズは `PTY_SIZE_FILE` の mtime を監視し、`TIOCSWINSZ` を適用する。
-- 書き込みは `writeChain` で直列化し、同時入力でのファイル競合を防ぐ。停止時は一時ファイルを削除する。
+- 入力は 1 キー入力ごとに `<prefix>-<seq>-<random>.tmp` を書いて `.cmd` へ atomic rename し、Python 側が 50ms 間隔で glob → 古い順に PTY へ書いて削除する。追記ファイルを書き換える方式ではないため、読み取り中の truncate で過去入力が再送される競合がない。
+- 書き込みは `writeChain` で直列化し、同時入力でのファイル競合を防ぐ。停止時は `.size` と未処理の `.cmd` / `.tmp` を削除する。
+- リサイズは `PTY_SIZE_FILE` の mtime を監視し、`TIOCSWINSZ` を適用する。
+- 起動 API は最初の出力後 250ms 沈黙するまで待って返す（最大 5 秒）。これにより zsh の初期化中に UI が `running` になって入力を取りこぼすのを減らす。
 - macOS のみ対応。`/usr/bin/python3` が無い場合は起動前にエラーを返す。
 
 ### AI とフロントエンド
@@ -86,10 +88,11 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 
 1. `window.electronAPI` は存在しない。Electron 前提のコードや `node-pty` を復活させない。
 2. tinyjs の API 型は `src/backend/tiny.d.ts` / `tjs.d.ts` を参照する。推測で API を追加しない。
-3. PTY の stdin を直接使わない。現行の一時ファイル方式を維持する。
+3. PTY の stdin を直接使わない。現行の atomic chunk ファイル方式を維持する。
 4. Notes の保存は本文全体を置換する。部分更新ではないため、読み取り専用判定とタイトル div の扱いを崩さない。
 5. ワークスペースのパスは必ず `relative()` を通す。`..` や `.right-stuff` を許可しない。
 6. 設定キーの一部は localStorage に残っている。名称変更時は移行を入れる。
+7. バックエンドに `tiny` グローバルは無い。OS 判定は `app.system.isMacOS()` を使う。`tiny` を参照するとターミナル起動が `tiny is not defined` で失敗する。
 
 ---
 

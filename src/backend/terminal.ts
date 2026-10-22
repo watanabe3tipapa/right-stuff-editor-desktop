@@ -2,11 +2,11 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 const PTY_BRIDGE = String.raw`
-import os, pty, select, struct, fcntl, termios, signal, sys
+import glob, os, pty, select, struct, fcntl, termios, signal, sys
 
 shell = os.environ.get("SHELL", "/bin/zsh")
 size_file = os.environ.get("PTY_SIZE_FILE", "")
-input_file = os.environ.get("PTY_INPUT_FILE", "")
+input_glob = os.environ.get("PTY_INPUT_GLOB", "")
 
 def apply_size():
     if not size_file:
@@ -25,7 +25,6 @@ if pid == 0:
 
 apply_size()
 last_size = os.stat(size_file).st_mtime_ns if size_file else 0
-input_offset = 0
 
 while True:
     try:
@@ -40,20 +39,16 @@ while True:
                 apply_size()
         except OSError:
             pass
-    if input_file:
-        try:
-            size = os.stat(input_file).st_size
-            if size < input_offset:
-                input_offset = 0
-            if size > input_offset:
-                with open(input_file, "rb") as fh:
-                    fh.seek(input_offset)
+    if input_glob:
+        for path in sorted(glob.glob(input_glob)):
+            try:
+                with open(path, "rb") as fh:
                     pending = fh.read()
-                    input_offset = fh.tell()
                 if pending:
                     os.write(fd, pending)
-        except OSError:
-            pass
+                os.unlink(path)
+            except OSError:
+                pass
     if fd in readable:
         try:
             data = os.read(fd, 65536)
@@ -83,22 +78,31 @@ interface TerminalSession {
   cols: number;
   rows: number;
   sizeFile: string;
-  inputFile: string;
-  input: Uint8Array;
+  inputPrefix: string;
+  inputSeq: number;
   writeChain: Promise<void>;
 }
 
 let session: TerminalSession | null = null;
+let generation = 0;
 
 const streamToApp = async (
   stream: { getReader(): { read(): Promise<{ value?: Uint8Array; done: boolean }> } },
   app: TinyApp,
+  child: TerminalSession["process"],
+  onFirstData?: () => void,
 ) => {
   const reader = stream.getReader();
+  let first = true;
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
     if (!value) continue;
+    if (session?.process !== child) break;
+    if (first) {
+      first = false;
+      onFirstData?.();
+    }
     app.push("terminal:data", decoder.decode(value, { stream: true }));
   }
 };
@@ -107,29 +111,51 @@ const writeSizeFile = async (sizeFile: string, cols: number, rows: number) => {
   await tjs.writeFile(sizeFile, encoder.encode(`${cols} ${rows}`));
 };
 
+const cleanupInputs = async (inputPrefix: string) => {
+  const slash = inputPrefix.lastIndexOf("/");
+  const dir = inputPrefix.slice(0, slash);
+  const base = inputPrefix.slice(slash + 1);
+  try {
+    for await (const entry of await tjs.readDir(dir)) {
+      const name = typeof entry === "string" ? entry : entry.name;
+      if (!name.startsWith(base)) continue;
+      await tjs.remove(`${dir}/${name}`).catch(() => undefined);
+    }
+  } catch {
+    // tmp dir may already be gone
+  }
+};
+
 export async function startTerminal(
   app: TinyApp,
   options: { cols?: number; rows?: number; cwd?: string | null },
 ): Promise<{ shell: string; cwd: string }> {
-  await stopTerminal().catch(() => undefined);
+  const token = ++generation;
+  await stopSession().catch(() => undefined);
+  if (token !== generation) throw new Error("ターミナル起動はキャンセルされました");
 
-  if (!tiny.system.isMacOS()) {
+  if (!app.system.isMacOS()) {
     throw new Error("アプリ内ターミナルは現在 macOS のみ対応しています");
   }
   if (!(await tjs.stat("/usr/bin/python3").then(() => true).catch(() => false))) {
     throw new Error("アプリ内ターミナルには /usr/bin/python3 が必要です");
   }
+  if (token !== generation) throw new Error("ターミナル起動はキャンセルされました");
 
   const shell = tjs.env.SHELL || "/bin/zsh";
-  const cwd = options.cwd || tjs.cwd();
+  const cwd = options.cwd || tjs.cwd;
   const cols = options.cols ?? 80;
   const rows = options.rows ?? 24;
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const sizeFile = `${tjs.tmpDir}/right-stuff-term-${stamp}.size`;
-  const inputFile = `${tjs.tmpDir}/right-stuff-term-${stamp}.in`;
+  const inputPrefix = `${tjs.tmpDir}/right-stuff-term-${stamp}.in`;
 
   await writeSizeFile(sizeFile, cols, rows);
-  await tjs.writeFile(inputFile, new Uint8Array());
+
+  if (token !== generation) {
+    await tjs.remove(sizeFile).catch(() => undefined);
+    throw new Error("ターミナル起動はキャンセルされました");
+  }
 
   const child = tjs.spawn(["/usr/bin/python3", "-c", PTY_BRIDGE], {
     cwd,
@@ -142,9 +168,20 @@ export async function startTerminal(
       COLUMNS: String(cols),
       LINES: String(rows),
       PTY_SIZE_FILE: sizeFile,
-      PTY_INPUT_FILE: inputFile,
+      PTY_INPUT_GLOB: `${inputPrefix}-*.cmd`,
     },
   }) as TerminalSession["process"];
+
+  if (token !== generation) {
+    try {
+      child.kill("SIGTERM");
+    } catch {
+      // already gone
+    }
+    await tjs.remove(sizeFile).catch(() => undefined);
+    await cleanupInputs(inputPrefix);
+    throw new Error("ターミナル起動はキャンセルされました");
+  }
 
   session = {
     process: child,
@@ -153,21 +190,49 @@ export async function startTerminal(
     cols,
     rows,
     sizeFile,
-    inputFile,
-    input: new Uint8Array(),
+    inputPrefix,
+    inputSeq: 0,
     writeChain: Promise.resolve(),
   };
 
-  void streamToApp(child.stdout, app).catch(() => undefined);
-  void streamToApp(child.stderr, app).catch(() => undefined);
+  let markReady: (() => void) | null = null;
+  let quietTimer: ReturnType<typeof setTimeout> | null = null;
+  let maxTimer: ReturnType<typeof setTimeout> | null = null;
+  const firstOutput = new Promise<void>((resolve) => {
+    markReady = resolve;
+  });
+  const finishReady = () => {
+    if (quietTimer) {
+      clearTimeout(quietTimer);
+      quietTimer = null;
+    }
+    if (maxTimer) {
+      clearTimeout(maxTimer);
+      maxTimer = null;
+    }
+    markReady?.();
+    markReady = null;
+  };
+  const notifyFirstOutput = () => {
+    if (!markReady) return;
+    if (quietTimer) clearTimeout(quietTimer);
+    quietTimer = setTimeout(finishReady, 250);
+  };
+  maxTimer = setTimeout(finishReady, 5000);
+
+  void streamToApp(child.stdout, app, child, notifyFirstOutput).catch(() => undefined);
+  void streamToApp(child.stderr, app, child, notifyFirstOutput).catch(() => undefined);
 
   void child.wait().then(({ exit_status }) => {
     if (session?.process !== child) return;
     session = null;
     void tjs.remove(sizeFile).catch(() => undefined);
-    void tjs.remove(inputFile).catch(() => undefined);
+    void cleanupInputs(inputPrefix);
     app.push("terminal:exit", exit_status);
   });
+
+  await firstOutput;
+  if (token !== generation) throw new Error("ターミナル起動はキャンセルされました");
 
   return { shell, cwd };
 }
@@ -176,12 +241,13 @@ export async function writeTerminal(data: string): Promise<boolean> {
   if (!session) throw new Error("ターミナルは起動していません");
   const current = session;
   const write = current.writeChain.then(async () => {
-    const chunk = encoder.encode(data);
-    const merged = new Uint8Array(current.input.length + chunk.length);
-    merged.set(current.input, 0);
-    merged.set(chunk, current.input.length);
-    current.input = merged;
-    await tjs.writeFile(current.inputFile, current.input);
+    if (session !== current) throw new Error("ターミナルは終了しました");
+    const seq = String(current.inputSeq++).padStart(8, "0");
+    const suffix = `${seq}-${Math.random().toString(36).slice(2)}`;
+    const tmpPath = `${current.inputPrefix}-${suffix}.tmp`;
+    const chunkPath = `${current.inputPrefix}-${suffix}.cmd`;
+    await tjs.writeFile(tmpPath, encoder.encode(data));
+    await tjs.rename(tmpPath, chunkPath);
   });
   current.writeChain = write.catch(() => undefined);
   try {
@@ -201,7 +267,7 @@ export async function resizeTerminal(cols: number, rows: number): Promise<boolea
   return true;
 }
 
-export async function stopTerminal(): Promise<boolean> {
+const stopSession = async (): Promise<boolean> => {
   const current = session;
   session = null;
   if (!current || current.closed) return true;
@@ -212,6 +278,11 @@ export async function stopTerminal(): Promise<boolean> {
     // already gone
   }
   await tjs.remove(current.sizeFile).catch(() => undefined);
-  await tjs.remove(current.inputFile).catch(() => undefined);
+  await cleanupInputs(current.inputPrefix);
   return true;
+};
+
+export async function stopTerminal(): Promise<boolean> {
+  generation++;
+  return stopSession();
 }

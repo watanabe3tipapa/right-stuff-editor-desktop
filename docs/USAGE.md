@@ -102,7 +102,7 @@ Settings で **Apple FM** を選び、`http://127.0.0.1:8765/v1/chat/completions
 
 ## ターミナル
 
-`Ctrl/Cmd + \`` で開きます。macOS の PTY 上で `$SHELL` を起動し、wterm で表示します。入力は一時ファイル経由、リサイズは PTY のウィンドウサイズ変更で反映されます。
+`Ctrl/Cmd + \`` で開きます。macOS の PTY 上で `$SHELL` を起動し、wterm で表示します。入力は中継プロセス経由、リサイズは PTY のウィンドウサイズ変更で反映されます。ヘッダーの「クリア」「再起動」で表示やシェルをリセットできます。
 
 - macOS のみ対応です。
 - `/usr/bin/python3` が必要です（Command Line Tools に含まれます）。

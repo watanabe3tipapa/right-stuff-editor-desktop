@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import "@wterm/react/css";
 import "./index.css";
 
 const report = (level: "warn" | "error", message: string, detail?: string) => {
