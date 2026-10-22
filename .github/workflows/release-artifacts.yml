@@ -1,0 +1,41 @@
+name: Release artifacts
+
+# 手動実行で Universal ビルドの zip / dmg を作り、Actions の成果物として保存する。
+# 公開は `gh release create` などの手動操作で行う。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "バージョンタグ（例: v0.2.0）"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  artifacts:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install tinyjs
+        run: curl -fsSL https://tinyjs.app/install | TINYJS_VERSION=v0.61.0 sh
+      - name: Build universal artifacts
+        run: npm run dist:universal
+      - name: Verify signatures
+        run: |
+          codesign --verify --deep --strict "dist/Right-Stuff Editor Desktop.app"
+          lipo -info "dist/Right-Stuff Editor Desktop.app/Contents/MacOS/tjs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: right-stuff-editor-desktop-${{ inputs.version }}-macos-universal
+          path: |
+            dist/right-stuff-editor-desktop-*-macos-universal.zip
+            dist/right-stuff-editor-desktop-*-macos-universal.dmg
+          if-no-files-found: error

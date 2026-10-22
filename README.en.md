@@ -214,7 +214,8 @@ package.json
 - [x] macOS PTY terminal
 - [x] Templates, writing stats, command palette, and themes
 - [x] Markdown / HTML / JSON / TXT / DOCX / Ollama Modelfile export
-- [x] Vitest round-trip tests for Markdown and Notes
+- [x] Vitest unit tests (Markdown / Notes round-trip, context building, chat store, similarity)
+- [x] GitHub Actions CI (typecheck / lint / test / build / macOS packaging)
 
 ### Next candidates
 

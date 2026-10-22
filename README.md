@@ -216,7 +216,8 @@ package.json
 - [x] macOS PTY ターミナル
 - [x] テンプレート、執筆統計、コマンドパレット、テーマ
 - [x] Markdown / HTML / JSON / TXT / DOCX / Ollama Modelfile 書き出し
-- [x] Vitest による Markdown / Notes 往復テスト
+- [x] Vitest によるユニットテスト（Markdown / Notes 往復・文脈構築・チャットストア・類似度）
+- [x] GitHub Actions による CI（typecheck / lint / test / build / macOS パッケージング）
 
 ### 次の候補
 

@@ -18,7 +18,7 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 | エディタ | Lexical 0.32 | Rich Text / Markdown の双方向切替 |
 | スタイル | Tailwind CSS v4 | `@tailwindcss/vite`、`@tailwindcss/typography` |
 | 永続化 | `tjs:sqlite` + Markdown ファイル | DB は WAL モード |
-| テスト | Vitest 2 | Markdown / Notes の往復テスト |
+| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度（41 tests） |
 
 - バックエンドは `src/backend/main.ts` の `export const api` にメソッドを列挙する方式。`init(app)` で DB とワークスペースを初期化し、`onWindowClosed()` で PTY を停止する。
 - フロントエンドは `window.tiny.api.call(method, params)` で呼び出す。ブリッジは `src/frontend/utils/desktop.ts` に集約し、バックエンドの生 API を画面から直接触らない。
@@ -88,6 +88,14 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - グローバル例外は `src/frontend/main.tsx` で捕捉し、`clientLog` API 経由でバックエンドのログへ送る。
 - 保存状態は `editorStore` の `saveStatus` と `lastPersistedContent` で管理。保存成功時に旧内容を履歴へ追加し、リカバリをクリアする。
 - バックアップ設定は Zustand の persist。`App.tsx` の interval は設定変更を購読して再設定する。
+
+### CI とテスト
+
+- `vitest.config.ts` をルートに置き、`src/frontend` と `src/backend` の両方のテストを拾う。alias は `@` → `src/frontend`。
+- Node 環境には `window` / `localStorage` が無いため、`src/frontend/test/setup.ts` で最小実装を准备的し、zustand の persist が動くようにしている。
+- `.github/workflows/ci.yml` … push / PR で typecheck → lint → test → build、macOS ジョブで `npm run package`（tinyjs CLI は `curl -fsSL https://tinyjs.app/install | sh` で導入、版本は固定）。
+- `.github/workflows/release-artifacts.yml` … 手動実行で `npm run dist:universal` を回し、zip / dmg を Actions 成果物として保存する。
+- `.github/workflows/pages.yml` … ランディングページの Pages デプロイ。
 
 ### パッケージと配布
 
