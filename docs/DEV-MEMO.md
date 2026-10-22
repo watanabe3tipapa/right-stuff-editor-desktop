@@ -76,7 +76,11 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - 生成の停止は `AbortController` をストアで保持して行う。フラグだけ消すとストリームが続き、停止後も応答が追記される。
 - 入力欄の Enter 送信は IME 変換中（`isComposing` / `keyCode === 229`）を除外する。日本語入力では変換の確定 Enter が誤送信になる。
 - `llmClient.sendChatRequest` は外部 `AbortSignal` を受け取れる。`probeLLMEndpoint` はベース URL に GET して到達確認だけ行う（応答があれば到達可能とみなす）。
-- 文書差し替えは Rich Text モードのみ。`editorBridge.replaceSelectionWithText` は選択が無ければ `false` を返す。
+- 文書差し替えは `editorBridge.replaceSelectionWithText`（Rich Text）と `editorStore.replaceMarkdownSelection`（Markdown の textarea）で行う。どちらも選択が無ければ `false` を返す。
+- 送信する文脈は `contextMode`（`auto` / `document` / `selection` / `none`）で切り替える。`auto` は選択範囲があれば選択範囲、なければ文書全体。
+- 選択範囲は `editorBridge.getSelectedText()` で取得する。Rich Text は Lexical の選択、Markdown は `#markdown-editor` の `selectionStart`/`selectionEnd` を使う。
+- 文書文脈は 6,000 文字制限のとき**先頭 2/3 と末尾 1/3**を残す（末尾に執筆中の内容が多いため）。省略した文字数は UI に明示する。
+- AI アクション（`utils/aiActions.ts` の `AI_ACTIONS`）はチャットからも実行できる。選択範囲があれば選択範囲、なければ文書を対象に `runAIAction` を呼び、結果をアシスタントメッセージとして追加する。
 - LLM 呼び出しはフロントエンドから直接行う（バックエンド経由ではない）。OpenAI 互換 API を基本に、Ollama / LM Studio / Apple FM / 主要クラウド API を抽象化している。
 - ゴーストテキスト、スラッシュコマンド、選択範囲のインライン変換、チャット、文体プロファイル、エンティティメモリを `src/frontend/utils` と各ストアで構成。
 - Apple Foundation Models は同梱の Swift ブリッジ `applefm/` を `npm run applefm` で起動し、`127.0.0.1:8765` の OpenAI 互換 API へ接続する。アプリからは起動しない。

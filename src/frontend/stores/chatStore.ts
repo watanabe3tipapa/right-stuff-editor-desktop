@@ -10,10 +10,13 @@ interface ChatStore extends ChatState {
   // LLM context
   includeDocument: boolean;
   setIncludeDocument: (include: boolean) => void;
+  contextMode: ContextMode;
+  setContextMode: (mode: ContextMode) => void;
 
   // Actions
   sendMessage: (message: Message, assistantMessageId: string) => void;
   startAssistantReply: (assistantMessageId: string) => void;
+  appendAssistantMessage: (content: string) => string;
   removeMessage: (id: string) => void;
   abortController: AbortController | null;
   setAbortController: (controller: AbortController | null) => void;
@@ -30,6 +33,9 @@ interface ChatStore extends ChatState {
 }
 
 const generateId = () => crypto.randomUUID();
+
+/** 哪一种文脈を LLM に渡すか */
+export type ContextMode = "auto" | "document" | "selection" | "none";
 
 /**
  * localStorage 経由で復元された日付は文字列になるため、Date へ戻す。
@@ -79,9 +85,12 @@ export const useChatStore = create<ChatStore>()(
       sessions: [initialSession],
       currentSessionId: initialSession.id,
       includeDocument: true,
+      contextMode: "auto",
       abortController: null,
 
       setIncludeDocument: (include) => set({ includeDocument: include }),
+
+      setContextMode: (mode) => set({ contextMode: mode }),
 
       setAbortController: (controller) => set({ abortController: controller }),
 
@@ -161,6 +170,28 @@ export const useChatStore = create<ChatStore>()(
             currentId: assistantMessageId,
           };
         });
+      },
+
+      appendAssistantMessage: (content: string) => {
+        const id = generateId();
+        const { currentSessionId, sessions } = get();
+        const sessionId = currentSessionId ?? sessions[0]?.id ?? null;
+        const message: Message = {
+          id,
+          role: "assistant",
+          content,
+          timestamp: new Date(),
+        };
+        set((state) => {
+          const updatedMessages = [...state.messages, message];
+          const updatedSessions = state.sessions.map((session) =>
+            session.id === sessionId
+              ? { ...session, messages: updatedMessages, updatedAt: new Date() }
+              : session,
+          );
+          return { messages: updatedMessages, sessions: updatedSessions };
+        });
+        return id;
       },
 
       updateStreamingMessage: (id: string, content: string) => {
@@ -298,6 +329,7 @@ export const useChatStore = create<ChatStore>()(
         sessions: state.sessions,
         currentSessionId: state.currentSessionId,
         includeDocument: state.includeDocument,
+        contextMode: state.contextMode,
       }),
       // 復元時は currentSessionId だけが残り messages は空になるため、
       // 選択中のセッションの本文を滞りなく読み戻す

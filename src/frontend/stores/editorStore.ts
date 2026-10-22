@@ -19,6 +19,7 @@ interface EditorStore extends EditorState {
   workspaceRoot: string | null;
   setContent: (content: string) => void;
   appendContent: (text: string) => void;
+  replaceMarkdownSelection: (text: string) => boolean;
   setMode: (mode: "rich" | "markdown") => void;
   setDirty: (isDirty: boolean) => void;
   markSaved: () => void;
@@ -167,6 +168,15 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
           : document,
       ),
     });
+  },
+
+  replaceMarkdownSelection: (text) => {
+    const area = document.getElementById("markdown-editor") as HTMLTextAreaElement | null;
+    if (!area) return false;
+    const { selectionStart, selectionEnd, value } = area;
+    if (selectionStart === selectionEnd) return false;
+    get().setContent(`${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`);
+    return true;
   },
 
   appendContent: (text) => {

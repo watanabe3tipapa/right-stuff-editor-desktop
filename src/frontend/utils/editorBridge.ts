@@ -18,13 +18,21 @@ export function appendTextToLexical(text: string) {
   return true;
 }
 
-/** 現在選択されているテキストを返す（Rich Text モードのみ） */
+/** Markdown モードのテキストエリア */
+const getMarkdownArea = (): HTMLTextAreaElement | null =>
+  document.getElementById("markdown-editor") as HTMLTextAreaElement | null;
+
+/** 現在選択されているテキストを返す（Rich Text / Markdown モード） */
 export function getSelectedText(): string {
+  const area = getMarkdownArea();
+  if (area && area.selectionStart !== area.selectionEnd) {
+    return area.value.slice(area.selectionStart, area.selectionEnd);
+  }
   if (!lexicalEditorInstance) return "";
   let text = "";
   lexicalEditorInstance.getEditorState().read(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
+    if ($isRangeSelection(selection) && !selection.isCollapsed()) {
       text = selection.getTextContent();
     }
   });

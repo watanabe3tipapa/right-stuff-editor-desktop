@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useChatStore } from "@/stores/chatStore";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useChatStore, type ContextMode } from "@/stores/chatStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useLLMStore } from "@/stores/llmStore";
 import {
@@ -11,8 +11,10 @@ import {
 } from "@/utils/llmClient";
 import {
   appendTextToLexical,
+  getSelectedText,
   replaceSelectionWithText,
 } from "@/utils/editorBridge";
+import { AI_ACTIONS, runAIAction, type AIAction } from "@/utils/aiActions";
 import { MarkdownContent } from "./MarkdownContent";
 import type { Message } from "@/types";
 
@@ -82,6 +84,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [modelDetail, setModelDetail] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [selectionText, setSelectionText] = useState("");
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -94,6 +99,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const model = useLLMStore((state) => state.config.model);
   const includeDocument = useChatStore((state) => state.includeDocument);
   const setIncludeDocument = useChatStore((state) => state.setIncludeDocument);
+  const contextMode = useChatStore((state) => state.contextMode);
+  const setContextMode = useChatStore((state) => state.setContextMode);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -121,6 +128,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  // 選択範囲の変化を追跡して、送信する文脈を事前に提示する
+  useEffect(() => {
+    const update = () => {
+      const text = getSelectedText().trim();
+      setSelectionText((previous) => (previous === text ? previous : text));
+    };
+    document.addEventListener("selectionchange", update);
+    document.addEventListener("input", update);
+    update();
+    return () => {
+      document.removeEventListener("selectionchange", update);
+      document.removeEventListener("input", update);
+    };
+  }, []);
+
   const probeModel = useCallback(async () => {
     setModelStatus("checking");
     const endpoint = useLLMStore.getState().config.endpoint;
@@ -133,12 +155,26 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     void probeModel();
   }, [probeModel]);
 
+  /** 現在の設定から、実際に送信する文脈（文書 / 選択範囲）を決める */
+  const resolveContext = useCallback((): { document: string; selection: string } => {
+    const { contextMode: mode } = useChatStore.getState();
+    const document = useEditorStore.getState().content;
+    const selection = getSelectedText().trim();
+    if (mode === "none") return { document: "", selection: "" };
+    if (mode === "selection") return { document: "", selection };
+    if (mode === "document") return { document, selection: "" };
+    // auto: 選択があれば選択範囲、なければ文書全体
+    return selection ? { document: "", selection } : { document, selection: "" };
+  }, []);
+
   const runRequest = useCallback(
     async (requestMessages: LLMMessage[], assistantMessageId: string) => {
       const { includeDocument: withDocument } = useChatStore.getState();
+      const context = resolveContext();
       const systemMessages = buildSystemMessages(
         useLLMStore.getState().config.systemPrompt,
-        withDocument ? useEditorStore.getState().content : undefined,
+        withDocument ? context.document : undefined,
+        { selection: context.selection },
       );
 
       const controller = new AbortController();
@@ -183,7 +219,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         controller.signal,
       );
     },
-    [],
+    [resolveContext],
   );
 
   const handleSubmit = useCallback(
@@ -276,17 +312,62 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   }, []);
 
   const handleReplace = useCallback((content: string) => {
-    const { mode } = useEditorStore.getState();
-    if (mode !== "rich") {
-      setNotice("Markdown モードでは使えません（Rich Text で選択して使ってください）");
+    const { mode, replaceMarkdownSelection } = useEditorStore.getState();
+    if (mode === "rich") {
+      if (replaceSelectionWithText(content)) {
+        setNotice("選択範囲を置き換えました");
+      } else {
+        setNotice("選択範囲がありません");
+      }
       return;
     }
-    if (replaceSelectionWithText(content)) {
+    if (replaceMarkdownSelection(content)) {
       setNotice("選択範囲を置き換えました");
     } else {
-      setNotice("選択範囲がありません");
+      setNotice("Markdown モードでは選択範囲がありません");
     }
   }, []);
+
+  const handleAttachSelection = useCallback(() => {
+    const text = getSelectedText().trim();
+    if (!text) {
+      setNotice("テキストが選択されていません");
+      return;
+    }
+    setContextMode("selection");
+    setNotice(`選択範囲 ${text.length.toLocaleString("ja-JP")} 文字を文脈に含めます`);
+    inputRef.current?.focus();
+  }, [setContextMode]);
+
+  const handleRunAction = useCallback(
+    async (action: AIAction) => {
+      if (actionBusy) return;
+      const selection = getSelectedText().trim();
+      const document = useEditorStore.getState().content.trim();
+      const target = selection || document.slice(0, 4000);
+      if (!target) {
+        setNotice("処理するテキストがありません");
+        return;
+      }
+      setActionBusy(action.id);
+      try {
+        const result = await runAIAction(action, target);
+        if (!result.trim()) {
+          setNotice("結果が空でした");
+          return;
+        }
+        useChatStore.getState().appendAssistantMessage(`**${action.label}**\n\n${result.trim()}`);
+        setNotice(`${action.label} を実行しました`);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : `${action.label} の実行に失敗しました`,
+        );
+      } finally {
+        setActionBusy(null);
+      }
+    },
+    [actionBusy],
+  );
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -304,6 +385,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   // 文字数表示のためだけに文書本文を購読すると入力のたびに再描画されるため、長さだけを購読する
   const documentLength = useEditorStore((state) => state.content.trim().length);
   const truncated = documentLength > DOCUMENT_CONTEXT_LIMIT;
+
+  const documentTruncated = documentLength > DOCUMENT_CONTEXT_LIMIT;
+  const documentOmitted = documentTruncated ? documentLength - DOCUMENT_CONTEXT_LIMIT : 0;
+  const contextSummary = useMemo(() => {
+    if (contextMode === "none") return "文脈は送りません";
+    if (contextMode === "selection") {
+      return selectionText
+        ? `選択範囲 ${selectionText.length.toLocaleString("ja-JP")} 文字`
+        : "選択範囲が未選択です";
+    }
+    if (contextMode === "document") {
+      return documentTruncated
+        ? `文書 ${DOCUMENT_CONTEXT_LIMIT.toLocaleString("ja-JP")} 文字（先頭と末尾、中略 ${documentOmitted.toLocaleString("ja-JP")} 文字）`
+        : `文書 ${documentLength.toLocaleString("ja-JP")} 文字`;
+    }
+    return selectionText
+      ? `選択範囲 ${selectionText.length.toLocaleString("ja-JP")} 文字`
+      : documentTruncated
+        ? `文書 ${DOCUMENT_CONTEXT_LIMIT.toLocaleString("ja-JP")} 文字（先頭と末尾、中略 ${documentOmitted.toLocaleString("ja-JP")} 文字）`
+        : `文書 ${documentLength.toLocaleString("ja-JP")} 文字`;
+  }, [contextMode, selectionText, documentLength, documentTruncated, documentOmitted]);
 
   const providerLabel = PROVIDER_LABELS[provider] ?? provider;
   const statusDotClass =
@@ -485,7 +587,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </p>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message, index) => {
+            const canRegenerate = messages[index - 1]?.role === "user";
+            return (
             <div
               key={message.id}
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
@@ -527,25 +631,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                       type="button"
                       onClick={() => handleReplace(message.content)}
                       className="px-1.5 py-0.5 rounded text-blue-200 hover:bg-white/10 transition-colors"
-                      title="選択範囲を置き換え（Rich Text のみ）"
+                      title="選択範囲を置き換え"
                     >
                       置換
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleRegenerate(message.id)}
-                      disabled={isStreaming}
-                      className="px-1.5 py-0.5 rounded text-blue-200 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      title="同じ質問で再生成"
-                    >
-                      再生成
-                    </button>
+                    {canRegenerate && (
+                      <button
+                        type="button"
+                        onClick={() => void handleRegenerate(message.id)}
+                        disabled={isStreaming}
+                        className="px-1.5 py-0.5 rounded text-blue-200 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        title="同じ質問で再生成"
+                      >
+                        再生成
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-          ))
-        )}
+          );
+        }))}
         <div ref={messagesEndRef} />
       </div>
 
@@ -576,6 +682,59 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </button>
           </div>
         )}
+        <div className="mb-2 flex items-center gap-2 flex-wrap text-xs text-gray-400">
+          <label className="flex items-center gap-1.5">
+            <span className="text-gray-500">文脈</span>
+            <select
+              value={contextMode}
+              onChange={(event) => setContextMode(event.target.value as ContextMode)}
+              className="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              aria-label="LLM に渡す文脈"
+            >
+              <option value="auto">自動（選択範囲があれば優先）</option>
+              <option value="document">文書全体</option>
+              <option value="selection">選択範囲のみ</option>
+              <option value="none">文脈を送らない</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={handleAttachSelection}
+            className="rounded border border-gray-600 px-2 py-1 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+            title="エディタで選択したテキストを文脈として添えます"
+          >
+            選択範囲を添えて質問
+          </button>
+          <span className="text-gray-500">{contextSummary}</span>
+        </div>
+
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={() => setActionsOpen((previous) => !previous)}
+            className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+            aria-expanded={actionsOpen}
+          >
+            {actionsOpen ? "▾" : "▸"} AI アクション（選択範囲または文書に適用）
+          </button>
+          {actionsOpen && (
+            <div className="mt-1.5 grid grid-cols-2 gap-1">
+              {AI_ACTIONS.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => void handleRunAction(action)}
+                  disabled={actionBusy !== null}
+                  title={action.description}
+                  className="rounded bg-gray-700 px-2 py-1 text-left text-xs text-gray-200 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {actionBusy === action.id ? "実行中…" : action.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {PROMPT_TEMPLATES.map((item) => (
             <button

@@ -110,8 +110,11 @@ export const getLLMProvider = (): LLMProvider => {
   }
 };
 
-/** 性能面の理由から、LLM に渡す文書は先頭優先で末尾を切り捨てる */
+/** 性能面の理由から、LLM に渡す文書は文字数で打ち切る */
 export const DOCUMENT_CONTEXT_LIMIT = 6000;
+
+/** 打ち切る場合は先頭 2/3 と末尾 1/3 を残す（末尾に執筆中の内容が多いため） */
+const DOCUMENT_HEAD_RATIO = 0.66;
 
 /**
  * 文体プロファイル + エンティティメモリのコンテキストを組み立てる。
@@ -142,7 +145,14 @@ export const buildDocumentContext = (markdown: string): string => {
   const body = markdown.trim();
   if (!body) return "";
   if (body.length <= DOCUMENT_CONTEXT_LIMIT) return body;
-  return `${body.slice(0, DOCUMENT_CONTEXT_LIMIT)}\n\n[文書は文字数制限によりここで省略しています]`;
+  const head = Math.floor(DOCUMENT_CONTEXT_LIMIT * DOCUMENT_HEAD_RATIO);
+  const tail = DOCUMENT_CONTEXT_LIMIT - head;
+  const omitted = body.length - DOCUMENT_CONTEXT_LIMIT;
+  return (
+    `${body.slice(0, head)}\n\n` +
+    `[中略 ${omitted.toLocaleString("ja-JP")} 文字]\n\n` +
+    `${body.slice(-tail)}`
+  );
 };
 
 /**
@@ -152,6 +162,7 @@ export const buildDocumentContext = (markdown: string): string => {
 export const buildSystemMessages = (
   systemPrompt: string | undefined,
   documentMarkdown: string | undefined,
+  options?: { selection?: string },
 ): LLMMessage[] => {
   const messages: LLMMessage[] = [];
   const custom = systemPrompt?.trim();
@@ -161,6 +172,13 @@ export const buildSystemMessages = (
   const aiContext = buildAIContext();
   if (aiContext) {
     messages.push({ role: "system", content: aiContext });
+  }
+  const selection = options?.selection?.trim();
+  if (selection) {
+    messages.push({
+      role: "system",
+      content: `以下は、ユーザーが編集中のテキストで選択した部分です。この部分について、質問や指示に対応した回答をしてください。\n\n---\n${selection}\n---`,
+    });
   }
   const document = documentMarkdown ? buildDocumentContext(documentMarkdown) : "";
   if (document) {
