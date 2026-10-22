@@ -19,7 +19,7 @@ Right-Stuff Editor Desktop は、macOS 向けのローカルファースト編�
 
 ## 動作環境
 
-- macOS（Apple Silicon 推奨。パッケージは arm64 のみ）
+- macOS（Apple Silicon 推奨。パッケージは Universal：Intel / Apple Silicon 両対応）
 - Node.js 18 以上（開発時）
 - Apple Notes 連携には Notes への自動化権限
 - ターミナルには `/usr/bin/python3` と `$SHELL`（既定 `/bin/zsh`）
@@ -140,7 +140,7 @@ Markdown、HTML、JSON、TXT、DOCX、Ollama Modelfile へ書き出せます。P
 - Web 版は提供していません。
 - 同期・共同編集はありません。
 - mdv 連携、Agent Skill Manager は現在無効です。
-- パッケージは arm64 のみです。Intel Mac では開発起動 (`tinyjs dev`) を利用してください。
+- パッケージは Universal（Intel / Apple Silicon）です。ただし OS ごとの動作差（Notes 連携・ターミナル）は macOS のバージョンに依存します。
 - Apple Notes のチェックリストや添付ファイルは、Notes の HTML 仕様により完全な往復編集ができない場合があります。
 
 ## トラブルシューティング

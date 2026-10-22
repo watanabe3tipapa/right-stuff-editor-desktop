@@ -93,7 +93,8 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 
 - `npm run package` = `tinyjs build` + `scripts/postbuild-macos.sh`。
 - postbuild は `Info.plist` に `NSAppleEventsUsageDescription` を追加し、`codesign --force --deep --sign -` で ad-hoc 署名する。これを省くと Apple Notes の自動化が失敗する。
-- 出力は `dist/Right-Stuff Editor Desktop.app`。arm64 のみ。Intel / Universal は未対応。
+- 出力は `dist/Right-Stuff Editor Desktop.app`。`npm run package:universal` で Universal（x86_64 + arm64）になる。`npm run dist:universal` はさらに zip / dmg を作る。
+- `tinyjs build --dmg` はアプリ完成**前**に dmg を作るため、署名や `NSAppleEventsUsageDescription`（postbuild）が入らない。配布物は `tinyjs build` → `postbuild-macos.sh` → `make-universal-artifacts.sh` の順で作る。
 - `npm test` は `src/frontend/utils/markdown.test.ts` を実行する。ビルドは `tsc`（frontend + backend）→ `vite build`。
 - ランディングページは `src/landing` を `vite.landing.config.ts` で `site/` へビルドし、`.github/workflows/pages.yml` が GitHub Pages へデプロイする。アプリ本体は Web 配信しない。
 

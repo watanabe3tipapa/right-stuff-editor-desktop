@@ -150,12 +150,12 @@ The landing page is built by [GitHub Actions](./.github/workflows/pages.yml) on 
 | `assets/` | Landing CSS and JavaScript |
 | `favicon.*` / `site.webmanifest` | Icons and PWA metadata |
 
-The app itself is not distributed on the web. macOS builds are intended for GitHub Releases (v0.1.0 currently provides source build instructions only).
+The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.1.0: universal zip / dmg).
 
 - Landing output: `site/`
 - App bundle: `dist/Right-Stuff Editor Desktop.app`
 - Signing: ad-hoc
-- Architecture: arm64
+- Architecture: Universal (Intel x86_64 / Apple Silicon arm64)
 
 ## Project layout
 
@@ -219,7 +219,7 @@ package.json
 ### Next candidates
 
 - [ ] Apple Developer ID signing and notarized distribution
-- [ ] Universal build (Intel Mac support)
+- [x] Universal build (Intel Mac and Apple Silicon)
 - [ ] Native PDF export
 - [ ] Better Apple Notes checklist and attachment round-trips
 - [ ] Re-enable Agent Skill Manager and mdv integrations
@@ -227,7 +227,7 @@ package.json
 
 ### Constraints
 
-- The current target is macOS; the distributed package is arm64 only
+- The current target is macOS; the distributed package is Universal (Intel / Apple Silicon)
 - The built-in terminal requires macOS and `/usr/bin/python3`
 - Apple Notes requires macOS automation permission. Shared and locked notes are read-only
 - PDF export goes through the print dialog

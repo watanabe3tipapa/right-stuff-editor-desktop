@@ -14,7 +14,9 @@
     "preview": "vite preview",
     "applefm:build": "bash applefm/build.sh",
     "applefm": "npm run applefm:build && ./applefm/build/apple-fm-server",
-    "package": "tinyjs build && bash scripts/postbuild-macos.sh"
+    "package": "tinyjs build && bash scripts/postbuild-macos.sh",
+    "package:universal": "tinyjs build --universal && bash scripts/postbuild-macos.sh",
+    "dist:universal": "npm run package:universal && bash scripts/make-universal-artifacts.sh"
   },
   "dependencies": {
     "@lexical/code": "^0.32.0",

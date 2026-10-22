@@ -152,12 +152,12 @@ open "dist/Right-Stuff Editor Desktop.app"
 | `assets/` | LP 用の CSS / JavaScript |
 | `favicon.*` / `site.webmanifest` | アイコンと PWA メタデータ |
 
-アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布する想定です（v0.1.0 時点ではビルド手順のみ）。
+アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.1.0: Universal ビルドの zip / dmg）。
 
 - ランディングページ: `site/`
 - アプリパッケージ: `dist/Right-Stuff Editor Desktop.app`
 - 署名: ad-hoc
-- 対応アーキテクチャ: arm64
+- 対応アーキテクチャ: Universal（Intel x86_64 / Apple Silicon arm64）
 
 ## ディレクトリ構成
 
@@ -221,7 +221,7 @@ package.json
 ### 次の候補
 
 - [ ] Apple Developer ID 署名・公証を含む配布パイプライン
-- [ ] Universal ビルド（Intel Mac 対応）
+- [x] Universal ビルド（Intel Mac / Apple Silicon 両対応）
 - [ ] ネイティブ PDF 書き出し
 - [ ] Apple Notes のチェックリスト・添付ファイルの往復精度向上
 - [ ] Agent Skill Manager / mdv 連携の再有効化
@@ -229,7 +229,7 @@ package.json
 
 ### 制約
 
-- 現在の対象は macOS です。配布パッケージは arm64 のみです
+- 現在の対象は macOS です。配布パッケージは Universal（Intel / Apple Silicon）です
 - アプリ内ターミナルは macOS + `/usr/bin/python3` が必要です
 - Apple Notes 連携には macOS の自動化権限が必要です。共有・ロック済みノートは読み取り専用になります
 - PDF 書き出しは印刷ダイアログ経由です
