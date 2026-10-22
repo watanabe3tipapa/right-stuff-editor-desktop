@@ -56,7 +56,7 @@ A browser-only editor is convenient, but your drafts live inside the browser's s
 - **Backups** — periodic workspace copies as JSON or Markdown under `.right-stuff/backups`
 - **Apple Notes** — list folders and notes, read and update bodies. Locked and shared notes are read-only
 - **Enhanced preview** — GitHub Alerts, Mermaid, KaTeX, syntax highlighting, GFM
-- **AI assistant** — 18 providers, ghost text, slash commands, inline transforms, chat
+- **AI assistant** — 19 providers (OpenAI-compatible APIs, Ollama, Apple FM, Sarashina, ...), ghost text, slash commands, inline transforms, chat
 - **Style and memory** — style profiles and entity memory for consistent terminology
 - **Terminal** — a macOS PTY rendered with wterm, starting in the workspace
 - **Writing tools** — templates, command palette, search, writing stats, Zen mode, typewriter mode

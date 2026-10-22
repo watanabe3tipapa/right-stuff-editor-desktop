@@ -1,5 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import {
+  SARASHINA_CHAT_MODELS,
+  SARASHINA_DEFAULT_ENDPOINT,
+} from "@/utils/llmConstants";
 import type { LLMConfig, LLMProvider } from "@/utils/llmClient";
 
 const APPLEFM_DEFAULT_PORT = 8765;
@@ -121,6 +125,12 @@ const defaultConfigs: Record<LLMProvider, LLMConfig> = {
     temperature: 0.7,
     maxTokens: 2048,
   },
+  sarashina: {
+    endpoint: SARASHINA_DEFAULT_ENDPOINT,
+    model: "sarashina3-mini",
+    temperature: 0.7,
+    maxTokens: 2048,
+  },
 };
 
 export const useLLMStore = create<LLMStore>()(
@@ -193,6 +203,11 @@ export const useLLMStore = create<LLMStore>()(
             if (!response.ok) return [];
             const data = await response.json();
             return data.data?.map((m: { id: string }) => m.id) || [];
+          }
+
+          if (provider === "sarashina") {
+            // Sarashina API は /models を持たないため、公式のチャット対応モデルを固定で返す
+            return [...SARASHINA_CHAT_MODELS];
           }
 
           // OpenAI 互換 API の /models エンドポイントを持つプロバイダ

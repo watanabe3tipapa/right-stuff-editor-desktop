@@ -43,6 +43,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   perplexity: "Perplexity",
   xai: "xAI",
   huggingface: "Hugging Face",
+  sarashina: "Sarashina",
   custom: "カスタム",
 };
 

@@ -1,4 +1,5 @@
 import { useLLMStore } from "@/stores/llmStore";
+import { SARASHINA_MAX_OUTPUT_TOKENS } from "./llmConstants";
 import { getActiveProfile } from "@/stores/styleStore";
 import { buildEntityContext } from "@/stores/entityStore";
 
@@ -29,9 +30,16 @@ export type LLMProvider =
   | "perplexity"
   | "xai"
   | "huggingface"
+  | "sarashina"
   | "custom";
 
 export const APPLEFM_DEFAULT_PORT = 8765;
+
+export {
+  SARASHINA_CHAT_MODELS,
+  SARASHINA_DEFAULT_ENDPOINT,
+  SARASHINA_MAX_OUTPUT_TOKENS,
+} from "./llmConstants";
 
 export const applefmBaseUrl = (endpoint: string): string =>
   endpoint
@@ -70,6 +78,8 @@ export interface LLMRequest {
   messages: LLMMessage[];
   temperature?: number;
   max_tokens?: number;
+  /** Sarashina API は max_tokens ではなく max_completion_tokens を使う */
+  max_completion_tokens?: number;
   stream?: boolean;
 }
 
@@ -108,6 +118,91 @@ export const getLLMProvider = (): LLMProvider => {
   } catch {
     return "ollama";
   }
+};
+
+/**
+ * Sarashina API は CORS ヘッダーを返さないため、ブラウザの fetch では
+ * 遮断される。tiny.fetch はバックエンド（ネイティブ層）経由でリクエストを
+ * 送るため、CORS/CSP の制限を受けない。
+ */
+type TinyFetchLike = (
+  url: string,
+  init?: {
+    method?: string;
+    headers?: HeadersInit;
+    body?: string;
+    stream?: boolean;
+  },
+) => Promise<Response>;
+
+const getTinyFetch = (): TinyFetchLike | null => {
+  const scope = globalThis as { tiny?: { fetch?: TinyFetchLike } };
+  return scope.tiny?.fetch ?? null;
+};
+
+/** Sarashina のように CORS を許可しない API 只能用 isomorphic な経路を使う */
+export const shouldProxyFetch = (provider: LLMProvider): boolean =>
+  provider === "sarashina" && getTinyFetch() !== null;
+
+/**
+ * リクエスト送信の共通入口。Sarashina の場合はバックエンド経由の
+ * tiny.fetch、それ以外は通常の fetch を使う。
+ */
+const llmFetch = async (
+  url: string,
+  init: RequestInit,
+  options?: { streamBody?: boolean },
+): Promise<Response> => {
+  if (shouldProxyFetch(getLLMProvider())) {
+    const tinyFetch = getTinyFetch();
+    if (tinyFetch) {
+      const { signal: _signal, ...rest } = init;
+      return tinyFetch(url, {
+        method: rest.method,
+        headers: rest.headers,
+        body: typeof rest.body === "string" ? rest.body : undefined,
+        stream: options?.streamBody === true,
+      });
+    }
+  }
+  return fetch(url, init);
+};
+
+/**
+ * プロバイダごとのリクエストボディを作る。
+ * Sarashina API は未サポートのフィールドを含むと 400 になるため、
+ * max_tokens を渡さず max_completion_tokens を使う。
+ */
+export const buildLLMRequest = (
+  config: LLMConfig,
+  messages: LLMMessage[],
+  options?: { stream?: boolean; maxTokens?: number; temperature?: number },
+): LLMRequest => {
+  const stream = options?.stream ?? false;
+  const temperature = options?.temperature ?? config.temperature;
+  const maxTokens = options?.maxTokens ?? config.maxTokens;
+
+  if (getLLMProvider() === "sarashina") {
+    const capped = Math.min(
+      Math.max(1, maxTokens ?? SARASHINA_MAX_OUTPUT_TOKENS),
+      SARASHINA_MAX_OUTPUT_TOKENS,
+    );
+    return {
+      model: config.model,
+      messages,
+      temperature,
+      max_completion_tokens: capped,
+      stream,
+    };
+  }
+
+  return {
+    model: config.model,
+    messages,
+    temperature,
+    max_tokens: maxTokens,
+    stream,
+  };
 };
 
 /** 性能面の理由から、LLM に渡す文書は文字数で打ち切る */
@@ -221,16 +316,10 @@ export const sendChatRequest = async (
     else externalSignal.addEventListener("abort", abortFromExternal);
   }
 
-  const requestBody: LLMRequest = {
-    model: config.model,
-    messages,
-    temperature: config.temperature,
-    max_tokens: config.maxTokens,
-    stream: true,
-  };
+  const requestBody = buildLLMRequest(config, messages, { stream: true });
 
   try {
-    const response = await fetch(config.endpoint, {
+    const response = await llmFetch(config.endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -238,7 +327,7 @@ export const sendChatRequest = async (
       },
       body: JSON.stringify(requestBody),
       signal,
-    });
+    }, { streamBody: true });
 
     if (!response.ok) {
       throw new Error(await readErrorMessage(response));
@@ -252,6 +341,15 @@ export const sendChatRequest = async (
     const decoder = new TextDecoder();
     let buffer = "";
     let completed = false;
+
+    // tiny.fetch には AbortSignal を渡せないため、リーダーを停止して中断する
+    if (shouldProxyFetch(getLLMProvider())) {
+      const cancel = () => {
+        void reader.cancel().catch(() => undefined);
+      };
+      if (signal.aborted) cancel();
+      else signal.addEventListener("abort", cancel, { once: true });
+    }
 
     const complete = () => {
       if (completed) return;
@@ -334,7 +432,7 @@ export const probeLLMEndpoint = async (
     .replace(/\/$/, "");
   if (!base) return { ok: false, detail: "エンドポイントが未設定です" };
   try {
-    const response = await fetch(base, { method: "GET" });
+    const response = await llmFetch(base, { method: "GET" });
     return { ok: true, detail: `HTTP ${response.status}` };
   } catch (error) {
     return { ok: false, detail: (error as Error).message || "接続できませんでした" };
@@ -347,15 +445,9 @@ export const sendNonStreamRequest = async (
 ): Promise<string> => {
   const config = getLLMConfig();
 
-  const requestBody: LLMRequest = {
-    model: config.model,
-    messages,
-    temperature: config.temperature,
-    max_tokens: config.maxTokens,
-    stream: false,
-  };
+  const requestBody = buildLLMRequest(config, messages, { stream: false });
 
-  const response = await fetch(config.endpoint, {
+  const response = await llmFetch(config.endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -405,15 +497,13 @@ export const requestGhostSuggestion = async (
     },
   ];
 
-  const requestBody: LLMRequest = {
-    model: config.model,
-    messages,
-    temperature: 0.3,
-    max_tokens: options?.maxTokens ?? 60,
+  const requestBody = buildLLMRequest(config, messages, {
     stream: false,
-  };
+    temperature: 0.3,
+    maxTokens: options?.maxTokens ?? 60,
+  });
 
-  const response = await fetch(config.endpoint, {
+  const response = await llmFetch(config.endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

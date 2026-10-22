@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { useLLMStore } from "@/stores/llmStore";
 import {
   buildDocumentContext,
+  buildLLMRequest,
   buildSystemMessages,
   DOCUMENT_CONTEXT_LIMIT,
+  SARASHINA_MAX_OUTPUT_TOKENS,
 } from "./llmClient";
 
 describe("buildDocumentContext", () => {
@@ -72,5 +75,39 @@ describe("buildSystemMessages", () => {
     const messages = buildSystemMessages(undefined, body);
     const document = messages.find((m) => m.content.includes("編集中の文書"));
     expect(document?.content).toContain("[中略 2,000 文字]");
+  });
+});
+
+describe("buildLLMRequest", () => {
+  const config = {
+    endpoint: "https://api.sarashina.ai/v1/chat/completions",
+    model: "sarashina3-mini",
+    temperature: 0.7,
+    maxTokens: 2048,
+  };
+  const messages = [{ role: "user" as const, content: "こんにちは" }];
+
+  it("Sarashina は max_tokens ではなく max_completion_tokens を使う", () => {
+    useLLMStore.getState().setProvider("sarashina");
+    const body = buildLLMRequest(config, messages, { stream: true });
+
+    expect(body.max_completion_tokens).toBe(2048);
+    expect(body.max_tokens).toBeUndefined();
+    expect(body.stream).toBe(true);
+  });
+
+  it("Sarashina の出力上限は 8000 トークンで頭打ちになる", () => {
+    useLLMStore.getState().setProvider("sarashina");
+    const body = buildLLMRequest(config, messages, { maxTokens: 999999 });
+
+    expect(body.max_completion_tokens).toBe(SARASHINA_MAX_OUTPUT_TOKENS);
+  });
+
+  it("その他のプロバイダは max_tokens を使う", () => {
+    useLLMStore.getState().setProvider("openai");
+    const body = buildLLMRequest(config, messages, { stream: false });
+
+    expect(body.max_tokens).toBe(2048);
+    expect(body.max_completion_tokens).toBeUndefined();
   });
 });

@@ -82,6 +82,12 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - 文書文脈は 6,000 文字制限のとき**先頭 2/3 と末尾 1/3**を残す（末尾に執筆中の内容が多いため）。省略した文字数は UI に明示する。
 - AI アクション（`utils/aiActions.ts` の `AI_ACTIONS`）はチャットからも実行できる。選択範囲があれば選択範囲、なければ文書を対象に `runAIAction` を呼び、結果をアシスタントメッセージとして追加する。
 - LLM 呼び出しはフロントエンドから直接行う（バックエンド経由ではない）。OpenAI 互換 API を基本に、Ollama / LM Studio / Apple FM / 主要クラウド API を抽象化している。
+- Sarashina（SB Intuitions の国産 LLM）は `sarashina` プロバイダとして追加した。
+  - エンドポイントは `https://api.sarashina.ai/v1/chat/completions`、モデルは `sarashina3-mini` / `sarashina3-nano`。`/models` エンドポイントはないのでモデル一覧は固定値（`utils/llmConstants.ts`）。
+  - Sarashina API は未サポートのフィールドを含むと 400 になるため、`max_tokens` を送らず `max_completion_tokens`（上限 8000）を使う。組み立ては `buildLLMRequest` に集約した。
+  - Sarashina API は CORS ヘッダーを返さない。ブラウザの `fetch` では遮断されるため、`tiny.fetch`（バックエンド経由・CORS/CSP 制限なし）を使う。通常のプロバイダは `fetch` のまま。
+  - `tiny.fetch` は `AbortSignal` を受け取れないため、生成停止はリーダーの `cancel()` で代用する（`sendChatRequest` 内）。
+  - 無料ベータ版は国内限定・レート制限あり（mini は 6 RPM）。
 - ゴーストテキスト、スラッシュコマンド、選択範囲のインライン変換、チャット、文体プロファイル、エンティティメモリを `src/frontend/utils` と各ストアで構成。
 - Apple Foundation Models は同梱の Swift ブリッジ `applefm/` を `npm run applefm` で起動し、`127.0.0.1:8765` の OpenAI 互換 API へ接続する。アプリからは起動しない。
 - ASM（Agent Skill Manager）と mdv は capability フラグで無効化している。UI 導線を復活させる場合は `src/frontend/utils/capabilities.ts` とバックエンド API の追加が必要。

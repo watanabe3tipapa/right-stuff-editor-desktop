@@ -45,6 +45,7 @@ const providerLabels: Record<LLMProvider, string> = {
   perplexity: "Perplexity",
   xai: "xAI",
   huggingface: "Hugging Face",
+  sarashina: "Sarashina（国産LLM）",
   custom: "Custom",
 };
 
@@ -66,13 +67,15 @@ const defaultEndpoints: Record<LLMProvider, string> = {
   perplexity: "https://api.perplexity.ai/chat/completions",
   xai: "https://api.x.ai/v1/chat/completions",
   huggingface: "https://router.huggingface.co/v1/chat/completions",
+  sarashina: "https://api.sarashina.ai/v1/chat/completions",
   custom: "",
 };
 
 // API キーが必要なクラウドプロバイダ
 const PROVIDERS_REQUIRING_API_KEY: LLMProvider[] = [
   "openai", "anthropic", "gemini", "groq", "deepseek", "mistral",
-  "together", "openrouter", "perplexity", "xai", "huggingface", "custom",
+  "together", "openrouter", "perplexity", "xai", "huggingface", "sarashina",
+  "custom",
 ];
 
 const themeLabels: Record<Theme, string> = {
@@ -530,6 +533,7 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                     placeholder={
                       provider === "unsloth" ? "sk-unsloth-..." :
                       provider === "anthropic" ? "sk-ant-..." :
+                      provider === "sarashina" ? "Sarashina API Key" :
                       "sk-..."
                     }
                     autoComplete="off"
@@ -537,6 +541,12 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                   />
                   {provider === "unsloth" && (
                     <p className="mt-1 text-xs text-gray-400">Unsloth のローカルAPIが発行するキー（`sk-unsloth-...`）を入力します。</p>
+                  )}
+                  {provider === "sarashina" && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      Sarashina の API キーを入力します（chat.sarashina.ai/dashboard/api-keys で発行）。
+                      日本国内からの利用が必要です。
+                    </p>
                   )}
                 </div>
               )}
