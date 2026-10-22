@@ -18,7 +18,7 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 
 ## ダウンロード
 
-v0.1.0 は現在、ソースからのビルドを前提としています。配布用ビルドは GitHub Releases で公開予定です。
+v0.1.0 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
 
 > ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
 
