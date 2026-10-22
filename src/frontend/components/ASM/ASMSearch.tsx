@@ -46,7 +46,7 @@ export const ASMSearch: React.FC<ASMSearchProps> = ({ className = "" }) => {
         disabled={!query.trim() || isLoading}
         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium text-white transition-colors"
       >
-        {isLoading ? "Searching..." : "Search"}
+        {isLoading ? "検索中…" : "検索"}
       </button>
     </form>
   );

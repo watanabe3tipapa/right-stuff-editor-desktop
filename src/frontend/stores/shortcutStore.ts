@@ -78,11 +78,11 @@ export const matchesShortcut = (e: KeyboardEvent, shortcut: string): boolean => 
   const parts = shortcut.split("+");
   const key = parts[parts.length - 1].toUpperCase();
   const modifiers = parts.slice(0, -1);
-  
+
   const hasCtrl = (e.ctrlKey || e.metaKey) && modifiers.includes("Ctrl");
   const hasAlt = e.altKey && modifiers.includes("Alt");
   const hasShift = e.shiftKey && modifiers.includes("Shift");
-  
+
   return (
     e.key.toUpperCase() === key &&
     hasCtrl === modifiers.includes("Ctrl") &&

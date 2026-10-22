@@ -933,7 +933,7 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                         disabled={!patInput || gistLoading}
                         className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {gistLoading ? "検証中..." : "Verify"}
+                        {gistLoading ? "検証中…" : "検証"}
                       </button>
                     </div>
                   </div>

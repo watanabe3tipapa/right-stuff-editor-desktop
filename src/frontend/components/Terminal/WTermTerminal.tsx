@@ -173,7 +173,7 @@ export const WTermTerminal: React.FC<WTermTerminalProps> = ({ isOpen, onClose })
       <div className="flex items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
         <span className="text-gray-400">Terminal</span>
         {status === "running" && <span className="text-green-400">● {shellName ?? "shell"}</span>}
-        {status === "starting" && <span className="text-gray-500">起動中...</span>}
+        {status === "starting" && <span className="text-gray-500">起動中…</span>}
         {status === "error" && <span className="text-red-400">! {error}</span>}
         {status === "idle" && <span className="text-gray-500">停止中</span>}
         {cwd && (

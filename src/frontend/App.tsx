@@ -393,7 +393,7 @@ const App: React.FC = () => {
     return (
       <section className={`${isSplitView ? "hidden md:flex" : "flex"} flex-1 flex-col min-w-0 border-l border-gray-700`} aria-label="プレビュー">
         <div className="px-4 py-2 bg-gray-800 border-b border-gray-700">
-          <span className="text-sm font-medium text-gray-300">Preview</span>
+          <span className="text-sm font-medium text-gray-300">プレビュー</span>
         </div>
         <div className="flex-1 overflow-auto p-4 bg-gray-900">
           <MarkdownPreview content={content} theme={resolvedTheme} />
@@ -561,7 +561,7 @@ const App: React.FC = () => {
           <section className="w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-800 p-6 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
             <p className="mb-2 text-sm font-semibold text-blue-300">Right-Stuff Editor Dash</p>
             <h1 id="onboarding-title" className="text-2xl font-semibold text-white">書くことに集中できるワークスペース</h1>
-            <p className="mt-3 leading-7 text-gray-300">リッチテキストと Markdown を切り替えながら、変更を端末内に自動保存できます。必要なときだけAIチャットやスキル管理を開き、まずは新しい文書を作るか、用意された案内文を編集して始めてください。</p>
+            <p className="mt-3 leading-7 text-gray-300">リッチテキストと Markdown を切り替えながら、変更を端末内に自動保存できます。必要なときだけAI チャットやスキル管理を開き、まずは新しい文書を作るか、用意された案内文を編集して始めてください。</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={handleCreateFirstDocument} className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-500">最初の文書を作成</button>
               <button type="button" onClick={completeOnboarding} className="rounded-lg border border-gray-600 px-4 py-3 font-medium text-gray-200 transition-colors hover:bg-gray-700">案内文から始める</button>

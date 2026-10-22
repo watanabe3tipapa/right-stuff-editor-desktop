@@ -138,28 +138,28 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
 
   const executeCommand = (cmd: string) => {
     const trimmedCmd = cmd.trim().toLowerCase();
-    
+
     if (trimmedCmd === "") {
       return "";
     }
-    
+
     if (trimmedCmd === "clear") {
       setHistory([]);
       return "";
     }
-    
+
     if (trimmedCmd === "help") {
       return mockCommands.help;
     }
-    
+
     if (trimmedCmd === "echo") {
       return "echo: missing argument";
     }
-    
+
     if (trimmedCmd.startsWith("echo ")) {
       return cmd.substring(5);
     }
-    
+
     if (trimmedCmd === "date") {
       return new Date().toISOString();
     }
@@ -168,32 +168,32 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
       window.open("https://watanabe3ti.com", "_blank");
       return mockCommands.main;
     }
-    
+
     if (trimmedCmd === "neo") {
       window.open("https://watanabe3ti.com/neo/", "_blank");
       return mockCommands.neo;
     }
-    
+
     if (trimmedCmd === "beos") {
       window.open("https://watanabe3ti.com/beos/", "_blank");
       return mockCommands.beos;
     }
-    
+
     if (trimmedCmd === "osx") {
       window.open("https://watanabe3ti-osx.vercel.app", "_blank");
       return mockCommands.osx;
     }
-    
+
     if (trimmedCmd === "qe") {
       window.open("https://quarto-editor-pe.vercel.app", "_blank");
       return mockCommands.qe;
     }
-    
+
     if (trimmedCmd === "te") {
       window.open("https://toolsmith-editor.vercel.app", "_blank");
       return mockCommands.te;
     }
-    
+
     if (trimmedCmd.startsWith("open ")) {
       const url = cmd.substring(5).trim();
       if (url) {
@@ -202,24 +202,24 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
       }
       return mockCommands.open;
     }
-    
+
     if (mockCommands[trimmedCmd]) {
       return mockCommands[trimmedCmd];
     }
-    
+
     return `command not found: ${trimmedCmd}`;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const output = executeCommand(input);
     const newHistory = [...history, `$ ${input}`];
-    
+
     if (output) {
       newHistory.push(output);
     }
-    
+
     newHistory.push("");
     setHistory(newHistory);
     setInput("");
@@ -235,7 +235,7 @@ export const Terminal: React.FC<TerminalProps> = ({ isOpen, onClose }) => {
           Terminal (Mock)
         </span>
         <div className="flex items-center gap-2">
-          <button className="terminal-close" onClick={onClose} title="Close">
+          <button className="terminal-close" onClick={onClose} title="閉じる">
             ×
           </button>
         </div>

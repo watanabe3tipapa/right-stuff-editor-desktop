@@ -452,7 +452,7 @@ packages/editor/
 - Webアプリ: ビルドOK
 - TypeScript: クリーン
 - LLM (Ollama): curlでAPI応答確認済み (qwen3.5:latest)
-- Vite dev server: 起動問題あり、解决方法研究中
+- Vite dev server: 起動問題あり、調査研究中
 
 ---
 
@@ -576,7 +576,7 @@ packages/editor/src/
 
 ### 概要
 
-既存の自行开发ターミナルを Vercel Labs の wterm に置き換え
+既存の自行開発ターミナルを Vercel Labs の wterm に置き換え
 
 ### 新規導入パッケージ
 
@@ -593,7 +593,7 @@ packages/editor/src/
 
 ### 変更理由
 
-- 本格的なターミナルエミュレータ体验を提供
+- 本格的なターミナルエミュレータ体験を提供
 - テーマ対応（Default, Solarized Dark, Monokai, Light）
 - パフォーマンス改善（Dirty-row tracking）
 - ネイティブテキスト選択対応

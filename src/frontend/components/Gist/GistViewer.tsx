@@ -196,7 +196,7 @@ export const GistViewer: React.FC<GistViewerProps> = ({ isOpen, onClose }) => {
               disabled={loading}
               className="text-xs text-gray-400 hover:text-white disabled:opacity-50"
             >
-              {loading ? "Loading..." : "Refresh"}
+              {loading ? "読み込み中…" : "再読み込み"}
             </button>
           </div>
         </div>
@@ -212,7 +212,7 @@ export const GistViewer: React.FC<GistViewerProps> = ({ isOpen, onClose }) => {
           {loading && gists.length === 0 && (
             <div className="py-8 text-center text-sm text-gray-400">
               <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-              Gist を読み込み中...
+              Gist を読み込み中…
             </div>
           )}
 
@@ -335,7 +335,7 @@ export const GistViewer: React.FC<GistViewerProps> = ({ isOpen, onClose }) => {
               {previewLoading ? (
                 <div className="py-8 text-center text-sm text-gray-400">
                   <div className="mx-auto mb-3 h-6 w-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-                  読み込み中...
+                  読み込み中…
                 </div>
               ) : (
                 <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300">

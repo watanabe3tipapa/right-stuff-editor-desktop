@@ -144,7 +144,7 @@ export const useLLMStore = create<LLMStore>()(
 
       getModels: async () => {
         const { provider, config } = get();
-        
+
         try {
           if (provider === "ollama") {
             const response = await fetch("http://localhost:11434/api/tags");
@@ -152,7 +152,7 @@ export const useLLMStore = create<LLMStore>()(
             const data = await response.json();
             return data.models?.map((m: { name: string }) => m.name) || [];
           }
-          
+
           if (provider === "anythingllm" || provider === "lmstudio" || provider === "foundrylocal") {
             return [config.model];
           }
@@ -168,7 +168,7 @@ export const useLLMStore = create<LLMStore>()(
             const data = await response.json();
             return data.data?.map((m: { id: string }) => m.id) || [];
           }
-          
+
           if (provider === "openai" && config.apiKey) {
             const response = await fetch("https://api.openai.com/v1/models", {
               headers: {
@@ -217,7 +217,7 @@ export const useLLMStore = create<LLMStore>()(
         } catch {
           return [];
         }
-        
+
         return [];
       },
     }),

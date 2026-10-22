@@ -72,7 +72,7 @@ const welcomeContent = `# Welcome to Right-Stuff Editor
 - 左の「＋」から文書を追加
 - 上部でリッチテキストと Markdown を切り替え
 - 文書はワークスペースの Markdown ファイルとして保存されます
-- AIアシスタントとスキル管理は、必要なときだけ開く
+- AI アシスタントとスキル管理は、必要なときだけ開く
 
 ## まずはここから
 

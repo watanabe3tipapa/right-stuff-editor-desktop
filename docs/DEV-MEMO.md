@@ -770,9 +770,9 @@ ee13065 vercel.json - fix
 
 - **Toolbar.tsx** に自動非表示ロジックを追加
   - マウス操作がない場合3秒後にフェードアウト
-  - マウスがToolbar周边に近づくと自动表示
+  - マウスがToolbarに近づくと自動表示
   - キーボード操作でToolbarを表示
-  - `Ctrl+Shift+T` で手動切换
+  - `Ctrl+Shift+T` で手動切替
 
 ### 変更ファイル
 
@@ -879,7 +879,7 @@ ee13065 vercel.json - fix
 - Terminalコンポーネントを新規作成（モック用）
 - 対応コマンド: help, echo, date, version, whoami, ls, pwd, clear
 - ショートカット: Ctrl+` でトグル
-- 外观: GitHub風ダークターミナル
+- 外観: GitHub風ダークターミナル
 
 ### 変更ファイル
 
@@ -897,7 +897,7 @@ ee13065 vercel.json - fix
 
 ## 26. Terminal パネル下部配置 + コマンド追加 (2026/04/14)
 
-### 實施內容
+### 実施内容
 
 - Terminal パネルを画面下部に配置
 - TerminalToolbarボタン（ターミナルアイコン）を追加
@@ -1083,20 +1083,20 @@ df52c83 feat: add LMStudio provider and AI Chat copy to Editor button
 
 ---
 
-## 32. react-markdown への切换 (2026/04/21)
+## 32. react-markdown への切替 (2026/04/21)
 
 ### 実施内容
 
-- MarkdownPreview を react-markdown + remark-gfm に切换
+- MarkdownPreview を react-markdown + remark-gfm に切替
 - GFM (GitHub Flavored Markdown) 完全対応
 
 ### 変更ファイル
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `packages/editor/src/components/Preview/MarkdownPreview.tsx` | react-markdown + remark-gfm に切换 |
+| `packages/editor/src/components/Preview/MarkdownPreview.tsx` | react-markdown + remark-gfm に切替 |
 
-### 対応记法
+### 対応記法
 
 | 記法 | 状態 |
 |------|------|
@@ -1117,8 +1117,8 @@ df52c83 feat: add LMStudio provider and AI Chat copy to Editor button
 
 ### 実施内容
 
-- 既存の自行开发ターミナルを Vercel Labs の wterm に置き換え
-- @wterm/dom, @wterm/react package を导入
+- 既存の自行開発ターミナルを Vercel Labs の wterm に置き換え
+- @wterm/dom, @wterm/react package をインポート
 
 ### 変更ファイル
 
@@ -1195,7 +1195,7 @@ node wterm-server.js
 ### 実施内容
 
 - wterm (@wterm/react) の導入を試行
-- WebSocket バックエンド接続尝试も试みる
+- WebSocket バックエンド接続の試行も試みる
 - 複雑で接続の確立が難しかったため、元に戻す
 
 ### 変更ファイル
@@ -1211,14 +1211,14 @@ node wterm-server.js
 
 ### 元に戻す理由
 
-- WebSocket プロキシ設定が复杂
-- バックエンド连接 Establishment 失败
-- シンプルな実装に戻すことが用户意向
+- WebSocket プロキシ設定が複雑
+- バックエンド接続 Establishment 失敗
+- シンプルな実装に戻すことがユーザーの意向
 
 ### 備考
 
-- wterm UI 单体は動作确认可能
-- バックエンド连接には别アプローチが必要
+- wterm UI 単体は動作確認可能
+- バックエンド接続には別アプローチが必要
 - 元のモックTerminalを引き続き使用
 
 ### Microsoft Foundry Local 追加 (2026/04/23)

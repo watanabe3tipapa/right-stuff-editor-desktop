@@ -74,7 +74,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   const handleExport = async (format: string) => {
     setShowExportMenu(false);
-    
+
     switch (format) {
       case "markdown":
         await saveFile(content, "document.md");
@@ -164,7 +164,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 ? "bg-gray-600 text-white"
                 : "text-gray-400 hover:text-white"
             }`}
-            title="Preview only"
+            title="プレビューのみ"
             aria-label="プレビューのみ表示"
             aria-pressed={viewMode === "preview"}
           >
@@ -247,7 +247,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           aria-label="AI 補完を切り替え"
           aria-pressed={ghostEnabled}
         >
-          {ghostEnabled ? "AI補完 ●" : "AI補完 ○"}
+          {ghostEnabled ? "AI 補完 ●" : "AI 補完 ○"}
         </button>
       </div>
 
