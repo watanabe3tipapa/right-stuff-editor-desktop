@@ -205,10 +205,7 @@ export const useEditorStore = create<EditorStore>()((set, get) => ({
     });
   },
 
-  createDocument: async (
-    title = "Untitled",
-    content = "# New document\n\nStart writing here…",
-  ) => {
+  createDocument: async (title = "Untitled", content = "") => {
     const created = await desktop.workspaceCreate({ title, content });
     const document = toEditorDocument(created);
     lastPersistedContent.set(document.id, document.content);
