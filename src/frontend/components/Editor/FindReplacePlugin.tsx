@@ -1,59 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
-  $getNodeByKey,
-  $getRoot,
   $getSelection,
   $isRangeSelection,
-  $isTextNode,
   COMMAND_PRIORITY_HIGH,
   KEY_DOWN_COMMAND,
-  type LexicalEditor,
 } from "lexical";
 import { OPEN_FIND_COMMAND } from "./editorCommands";
-
-interface Match {
-  nodeKey: string;
-  start: number;
-  end: number;
-}
+import {
+  $collectFindMatches,
+  applyFindHighlights,
+  clearFindHighlights,
+  replaceAllFindMatches,
+  replaceFindMatch,
+  selectFindMatch,
+  type FindMatch,
+} from "./findReplace";
 
 const isMod = (event: KeyboardEvent) => event.metaKey || event.ctrlKey;
-
-function collectMatches(query: string, caseSensitive: boolean): Match[] {
-  if (!query) return [];
-  const needle = caseSensitive ? query : query.toLowerCase();
-  const matches: Match[] = [];
-  for (const node of $getRoot().getAllTextNodes()) {
-    const text = node.getTextContent();
-    const haystack = caseSensitive ? text : text.toLowerCase();
-    let from = 0;
-    while (from <= haystack.length - needle.length) {
-      const index = haystack.indexOf(needle, from);
-      if (index < 0) break;
-      matches.push({
-        nodeKey: node.getKey(),
-        start: index,
-        end: index + needle.length,
-      });
-      from = index + needle.length;
-    }
-  }
-  return matches;
-}
-
-function selectMatch(editor: LexicalEditor, match: Match) {
-  editor.update(() => {
-    const node = $getNodeByKey(match.nodeKey);
-    if ($isTextNode(node)) {
-      node.select(match.start, match.end);
-    }
-  });
-  editor.getElementByKey(match.nodeKey)?.scrollIntoView({
-    block: "center",
-    behavior: "smooth",
-  });
-}
 
 export const FindReplacePlugin: React.FC = () => {
   const [editor] = useLexicalComposerContext();
@@ -64,28 +28,54 @@ export const FindReplacePlugin: React.FC = () => {
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [matchCount, setMatchCount] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const matchesRef = useRef<Match[]>([]);
+  const matchesRef = useRef<FindMatch[]>([]);
+  const currentIndexRef = useRef(0);
   const hasSelectedRef = useRef(false);
+  const highlightFrameRef = useRef<number | null>(null);
   const queryInputRef = useRef<HTMLInputElement>(null);
+
+  const cancelHighlights = useCallback(() => {
+    if (highlightFrameRef.current !== null) {
+      window.cancelAnimationFrame(highlightFrameRef.current);
+      highlightFrameRef.current = null;
+    }
+  }, []);
+
+  const scheduleHighlights = useCallback(
+    (matches: FindMatch[], index: number) => {
+      cancelHighlights();
+      if (!open) {
+        clearFindHighlights();
+        return;
+      }
+      highlightFrameRef.current = window.requestAnimationFrame(() => {
+        highlightFrameRef.current = null;
+        applyFindHighlights(editor, matches, index);
+      });
+    },
+    [cancelHighlights, editor, open],
+  );
 
   const refresh = useCallback(
     (preferredIndex = 0, shouldSelect = false) => {
       const matches = editor.getEditorState().read(() =>
-        collectMatches(query, caseSensitive),
+        $collectFindMatches(query, caseSensitive),
       );
       matchesRef.current = matches;
       setMatchCount(matches.length);
       const index = matches.length
         ? Math.min(Math.max(preferredIndex, 0), matches.length - 1)
         : 0;
+      currentIndexRef.current = index;
       setCurrentIndex(index);
+      scheduleHighlights(matches, index);
       if (shouldSelect && matches.length) {
-        selectMatch(editor, matches[index]);
+        selectFindMatch(editor, matches[index]);
         hasSelectedRef.current = true;
       }
       return matches;
     },
-    [caseSensitive, editor, query],
+    [caseSensitive, editor, query, scheduleHighlights],
   );
 
   const openFind = useCallback(
@@ -108,61 +98,37 @@ export const FindReplacePlugin: React.FC = () => {
 
   const close = useCallback(() => {
     setOpen(false);
+    cancelHighlights();
+    clearFindHighlights();
     editor.focus();
-  }, [editor]);
+  }, [cancelHighlights, editor]);
 
   const go = useCallback(
     (delta: number) => {
       const matches = matchesRef.current;
       if (!matches.length) return;
       const next = hasSelectedRef.current
-        ? (currentIndex + delta + matches.length) % matches.length
-        : currentIndex;
+        ? (currentIndexRef.current + delta + matches.length) % matches.length
+        : currentIndexRef.current;
+      currentIndexRef.current = next;
       setCurrentIndex(next);
-      selectMatch(editor, matches[next]);
+      selectFindMatch(editor, matches[next]);
       hasSelectedRef.current = true;
+      scheduleHighlights(matches, next);
     },
-    [currentIndex, editor],
+    [editor, scheduleHighlights],
   );
 
   const replaceOne = useCallback(() => {
-    const match = matchesRef.current[currentIndex];
+    const match = matchesRef.current[currentIndexRef.current];
     if (!match) return;
-    editor.update(() => {
-      const node = $getNodeByKey(match.nodeKey);
-      if (!$isTextNode(node)) return;
-      node.select(match.start, match.end);
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        selection.insertText(replacement);
-      }
-    });
-    refresh(currentIndex, true);
-  }, [currentIndex, editor, refresh, replacement]);
+    replaceFindMatch(editor, match, replacement);
+    refresh(currentIndexRef.current, true);
+  }, [editor, refresh, replacement]);
 
   const replaceAll = useCallback(() => {
     if (!query) return;
-    editor.update(() => {
-      const matches = collectMatches(query, caseSensitive);
-      const byNode = new Map<string, Match[]>();
-      for (const match of matches) {
-        const list = byNode.get(match.nodeKey);
-        if (list) {
-          list.push(match);
-        } else {
-          byNode.set(match.nodeKey, [match]);
-        }
-      }
-      for (const [nodeKey, list] of byNode) {
-        const node = $getNodeByKey(nodeKey);
-        if (!$isTextNode(node)) continue;
-        let text = node.getTextContent();
-        for (const match of [...list].sort((a, b) => b.start - a.start)) {
-          text = `${text.slice(0, match.start)}${replacement}${text.slice(match.end)}`;
-        }
-        node.setTextContent(text);
-      }
-    });
+    replaceAllFindMatches(editor, query, caseSensitive, replacement);
     hasSelectedRef.current = false;
     refresh(0, false);
   }, [caseSensitive, editor, query, refresh, replacement]);
@@ -195,10 +161,30 @@ export const FindReplacePlugin: React.FC = () => {
   }, [editor, openFind]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      clearFindHighlights();
+      return;
+    }
     hasSelectedRef.current = false;
     refresh(0, false);
   }, [open, query, caseSensitive, refresh]);
+
+  useEffect(() => {
+    if (!open) return;
+    return editor.registerUpdateListener(() => {
+      const matches = editor.getEditorState().read(() =>
+        $collectFindMatches(query, caseSensitive),
+      );
+      matchesRef.current = matches;
+      setMatchCount(matches.length);
+      const index = matches.length
+        ? Math.min(currentIndexRef.current, matches.length - 1)
+        : 0;
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+      scheduleHighlights(matches, index);
+    });
+  }, [caseSensitive, editor, open, query, scheduleHighlights]);
 
   useEffect(() => {
     if (!open) return;
@@ -208,6 +194,14 @@ export const FindReplacePlugin: React.FC = () => {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
+
+  useEffect(
+    () => () => {
+      cancelHighlights();
+      clearFindHighlights();
+    },
+    [cancelHighlights],
+  );
 
   const status = !query
     ? "検索語を入力"

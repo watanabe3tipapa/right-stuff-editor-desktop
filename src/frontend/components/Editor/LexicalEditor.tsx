@@ -74,6 +74,7 @@ import { InlineAIPlugin } from "./InlineAIPlugin";
 import { EditorShortcutsPlugin } from "./EditorShortcutsPlugin";
 import { PlainTextPastePlugin } from "./PlainTextPastePlugin";
 import { FindReplacePlugin } from "./FindReplacePlugin";
+import { TABLE_TRANSFORMER } from "./tableTransformer";
 import { setBlockType, toggleList, type BlockKind } from "./blockOperations";
 import {
   OPEN_FIND_COMMAND,
@@ -278,6 +279,13 @@ const editorStyles = `
     color: #9ca3af;
   }
   .rd-find-case input { accent-color: #2563eb; }
+  .editor-input::highlight(rd-find-match) {
+    background-color: rgba(250, 204, 21, .28);
+  }
+  .editor-input::highlight(rd-find-current) {
+    background-color: rgba(249, 115, 22, .55);
+    color: #fff;
+  }
 
   .rd-inline-ai-button {
     background: #2563eb;
@@ -443,6 +451,7 @@ const markdownTransformers = [
   CHECK_LIST,
   IMAGE_TRANSFORMER,
   HR_TRANSFORMER,
+  TABLE_TRANSFORMER,
 ];
 
 type PopoverKind = "link" | "table" | "image";

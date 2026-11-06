@@ -18,10 +18,15 @@ quiet-md（Rust + GPUI の Markdown エディタ）の操作感を参考に、Le
 - **スラッシュメニュー**（`slashCommands.ts` / `SlashCommandPlugin.tsx`）
   - 18 コマンドを「基本」「挿入」にグループ化。ラベル前方一致 → キーワード前方一致 → 部分一致の順にランク付けし、同点は定義順を維持する。
   - 各項目にショートカットを表示し、メニュー下部に `↑↓ / Enter / Esc` の操作を明示。
-- **検索と置換**（`FindReplacePlugin.tsx`）
-  - `TextNode` ごとに一致を収集し、選択範囲を移動。置換は 1 件ずつ、またはノード単位で後ろから置き換える。
+- **検索と置換**（`findReplace.ts` / `FindReplacePlugin.tsx`）
+  - 段落内の連続するインライン `TextNode` を 1 本のランとして連結し、ブロック・改行・画像などの非テキスト要素を境界として一致を収集する。太字、リンク、インラインコードをまたぐ検索に対応。
+  - 一致は `{ nodeKey, start, end }` のセグメント配列で保持し、先頭セグメントから末尾セグメントまでを `RangeSelection` で選択する。置換は 1 件ずつ、または文書末尾側から順に `insertText` する。
+  - 全一致は CSS Custom Highlight API（`CSS.highlights` + `::highlight()`）で強調表示し、現在の一致は別色にする。API 非対応環境ではハイライトのみスキップする。
   - `Cmd/Ctrl+F` / `Cmd/Ctrl+Alt+F` で起動。`PASTE_COMMAND` と違い、`keydown` で開くためブラウザ既定の検索を抑止できる。
-  - 現状はインライン要素をまたぐ一致と全一致ハイライトには未対応。
+- **Markdown テーブル往復**（`tableTransformer.ts`）
+  - `@lexical/markdown` にテーブルトランスフォーマーが無いため、`MultilineElementTransformer` を独自実装。`handleImportAfterStartMatch` でヘッダー行・区切り行・本文行をまとめて読み込み、`TableNode` / `TableRowNode` / `TableCellNode` を組み立てる。
+  - エクスポートは先頭行をヘッダーとして GFM テーブルを出力。セル内の `|` と `\` をエスケープし、改行は `<br>` にする。`regExpEnd` を非オプションにして入力ショートカットからは除外する。
+  - セル内のインライン書式は読み込み時にプレーンテキストへ落とすが、Markdown 文字列としての往復は安定する。
 - **書式なし貼り付け**（`PlainTextPastePlugin.tsx`）
   - `ClipboardEvent` には `shiftKey` が無いため、直前の `keydown`（`Cmd/Ctrl+Shift+V`）を ref に記録してから `PASTE_COMMAND` で処理する。
 - **Markdown 入力支援**
@@ -35,7 +40,9 @@ quiet-md（Rust + GPUI の Markdown エディタ）の操作感を参考に、Le
 
 - `slashCommands.test.ts` を追加（空クエリ、ラベル前方一致、キーワード一致、日本語ラベル、未知クエリ）。
 - `blockOperations.test.ts` を追加（見出し変換、リスト解除、リストのトグル、ブロック移動）。
-- `npm run typecheck` / `npm run lint` / `npm test`（9 files / 69 tests）/ `npm run build` が成功。
+- `findReplace.test.ts` を追加（単一ノード、書式をまたぐ一致、リンク内、境界、大文字小文字、クロスノード置換、全置換）。
+- `tableTransformer.test.ts` を追加（テーブル読み込み、往復、エスケープ、整列区切り、非テーブル）。
+- `npm run typecheck` / `npm run lint` / `npm test`（11 files / 83 tests）/ `npm run build` が成功。
 
 ---
 
@@ -52,7 +59,7 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 | エディタ | Lexical 0.32 | Rich Text / Markdown の双方向切替 |
 | スタイル | Tailwind CSS v4 | `@tailwindcss/vite`、`@tailwindcss/typography` |
 | 永続化 | `tjs:sqlite` + Markdown ファイル | DB は WAL モード |
-| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度、図表プレビュー、スラッシュコマンド、ブロック操作（69 tests） |
+| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度、図表プレビュー、スラッシュコマンド、ブロック操作、検索置換、テーブル往復（83 tests） |
 
 - バックエンドは `src/backend/main.ts` の `export const api` にメソッドを列挙する方式。`init(app)` で DB とワークスペースを初期化し、`onWindowClosed()` で PTY を停止する。
 - フロントエンドは `window.tiny.api.call(method, params)` で呼び出す。ブリッジは `src/frontend/utils/desktop.ts` に集約し、バックエンドの生 API を画面から直接触らない。

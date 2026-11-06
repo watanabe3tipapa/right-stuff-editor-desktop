@@ -50,8 +50,8 @@ A browser-only editor is convenient, but your drafts live inside the browser's s
 - **Workspace** — choose a folder and recursively list Markdown / TXT. Create, rename, delete, and reload
 - **Rich-text editing** — headings 1–6, bold, italic, underline, strikethrough, inline code, color, highlight, lists, checklists, quotes, code blocks, links, tables, and left/center/right alignment
 - **Keyboard-first editing** — slash menu at the start of a line, block-type shortcuts, block movement, and paste as plain text
-- **Find and replace** — move through matches, replace one or all, with case sensitivity
-- **Markdown sync** — save as Markdown with frontmatter, with source view and preview; typing `# ` or `- [ ] ` converts blocks as you write
+- **Find and replace** — move through matches, replace one or all, with case sensitivity. Matches can span bold, links, and inline code, and all matches are highlighted
+- **Markdown sync** — save as Markdown with frontmatter, with source view and preview; tables round-trip as GFM, and typing `# ` or `- [ ] ` converts blocks as you write
 - **Autosave and conflict handling** — saves every 30 seconds by default and 2.5 seconds after typing stops (skipped if the last save was under 10 seconds ago); prompts for reload when a file changed externally
 - **Version history** — records the previous content on every save and restores any version
 - **Recovery** — snapshots unsaved work every 15 seconds and offers to restore on next launch
@@ -202,6 +202,11 @@ package.json
 7. Use the export menu to write Markdown, HTML, JSON, TXT, DOCX, or an Ollama Modelfile
 
 ## Known limitations and roadmap
+
+### After v0.3.0
+
+- [x] Find across inline elements with all-match highlighting
+- [x] Markdown round-trip for tables as GFM
 
 ### v0.3.0
 
