@@ -9,7 +9,7 @@ const mockCommands: Record<string, string> = {
   help: "Available commands: help, echo, date, clear, version, whoami, ls, pwd, main, open, neo, beos, osx, qe, te",
   echo: "Usage: echo <message>",
   date: "Returns current date and time",
-  version: "Right-Stuff Editor Dash v0.5.0",
+  version: "Right-Stuff Editor Desktop v0.3.0",
   whoami: "user",
   ls: "Documents  Downloads  Desktop  code",
   pwd: "/home/user",

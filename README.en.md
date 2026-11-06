@@ -9,7 +9,7 @@ right-stuff-editor-desktop is a local-first macOS editor built with tinyjs (txik
 > **Write, refine, keep. Keep the whole flow on your machine.** Drafts stay as files in the folder you chose and remain usable from other editors, Finder, and Git. There is no cloud sync and no account.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
@@ -18,7 +18,7 @@ right-stuff-editor-desktop is a local-first macOS editor built with tinyjs (txik
 
 ## Download
 
-v0.2.0 is currently built from source. Distribution builds are also published on GitHub Releases.
+v0.3.0 is currently built from source. Distribution builds are also published on GitHub Releases.
 
 > The build is ad-hoc signed. It is not signed or notarized with an Apple Developer ID. If macOS warns on first launch, right-click the app and choose **Open**.
 
@@ -152,7 +152,7 @@ The landing page is built by [GitHub Actions](./.github/workflows/pages.yml) on 
 | `assets/` | Landing CSS and JavaScript |
 | `favicon.*` / `site.webmanifest` | Icons and PWA metadata |
 
-The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.2.0: universal zip / dmg).
+The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.3.0: universal zip / dmg).
 
 - Landing output: `site/`
 - App bundle: `dist/Right-Stuff Editor Desktop.app`
@@ -203,6 +203,14 @@ package.json
 
 ## Known limitations and roadmap
 
+### v0.3.0
+
+- [x] Grouped, filtered slash menu with shortcut hints
+- [x] Keyboard operations for headings 1–6, checklists, quotes, code, and block movement
+- [x] Find and replace, inline code, alignment, and paste as plain text
+- [x] Idle autosave 2.5 seconds after typing stops
+- [x] Markdown input shortcuts (`# `, `- [ ] `, and more)
+
 ### v0.2.0
 
 - [x] Preview zoom (50–200%)
@@ -210,9 +218,6 @@ package.json
 - [x] PlantUML rendering (configurable server URL, explicit external transfer)
 - [x] Archify HTML embedding (workspace path or inline HTML)
 - [x] Unit tests for diagram previews
-- [x] Grouped, filtered slash menu with shortcut hints
-- [x] Keyboard operations for headings 1–6, checklists, quotes, code, and block movement
-- [x] Find and replace, inline code, alignment, and paste as plain text
 
 ### v0.1.0
 

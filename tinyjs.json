@@ -4,7 +4,7 @@
   "title": "Right-Stuff Editor Desktop",
   "size": "1400x900",
   "id": "com.watanabe3ti.right-stuff-editor-desktop",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "backend": "src/backend/main.ts",
   "frontend": {
     "build": "npm run build",

@@ -9,7 +9,7 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 > **書く、整える、残す。その流れを、端末内で完結させる。** 原稿は選んだフォルダのファイルに残り、他のエディタ、Finder、Git とそのまま併用できます。クラウド同期やアカウント登録はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
@@ -18,7 +18,7 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 
 ## ダウンロード
 
-v0.2.0 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
+v0.3.0 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
 
 > ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
 
@@ -154,7 +154,7 @@ open "dist/Right-Stuff Editor Desktop.app"
 | `assets/` | LP 用の CSS / JavaScript |
 | `favicon.*` / `site.webmanifest` | アイコンと PWA メタデータ |
 
-アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.2.0: Universal ビルドの zip / dmg）。
+アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.3.0: Universal ビルドの zip / dmg）。
 
 - ランディングページ: `site/`
 - アプリパッケージ: `dist/Right-Stuff Editor Desktop.app`
@@ -205,6 +205,14 @@ package.json
 
 ## 既知の制約とロードマップ
 
+### v0.3.0
+
+- [x] スラッシュメニューのグループ化・絞り込み・ショートカット表示
+- [x] 見出し 1–6、チェックリスト、引用、コード、ブロック移動のキーボード操作
+- [x] 検索と置換、インラインコード、左右中央揃え、書式なし貼り付け
+- [x] 入力停止 2.5 秒後のアイドル自動保存
+- [x] Markdown 入力支援（`# `、`- [ ] ` など）
+
 ### v0.2.0
 
 - [x] プレビューの拡大率変更（50–200%）
@@ -212,9 +220,6 @@ package.json
 - [x] PlantUML のレンダリング（サーバー URL を設定可能、外部送信を明示）
 - [x] Archify HTML の埋め込み（ワークスペース内パス / インライン HTML）
 - [x] 図表プレビューのユニットテスト追加
-- [x] スラッシュメニューのグループ化・絞り込み・ショートカット表示
-- [x] 見出し 1–6、チェックリスト、引用、コード、ブロック移動のキーボード操作
-- [x] 検索と置換、インラインコード、左右中央揃え、書式なし貼り付け
 
 ### v0.1.0
 

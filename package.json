@@ -1,7 +1,7 @@
 {
   "name": "right-stuff-editor-desktop",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Right-Stuff Editor Desktop — a local-first writing workspace built with tinyjs",
   "scripts": {
