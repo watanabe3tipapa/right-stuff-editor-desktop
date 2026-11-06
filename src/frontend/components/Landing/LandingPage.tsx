@@ -156,7 +156,7 @@ const LandingPage: React.FC = () => (
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
             Markdown の可搬性、リッチテキストの書き心地、Apple Notes と AI。
-            スラッシュメニューとキーボード操作を備えた right-stuff-editor-desktop は、原稿を端末のフォルダに残したまま、書くための道具をひとつにまとめます。
+            スラッシュメニュー、テンプレート、キーボード操作を備えた right-stuff-editor-desktop は、原稿を端末のフォルダに残したまま、書くための道具をひとつにまとめます。
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
@@ -204,6 +204,7 @@ const LandingPage: React.FC = () => (
                   <div className="px-2 py-1.5">drafts/idea.md</div>
                 </div>
                 <div className="mt-6 space-y-1.5 border-t border-slate-800 pt-3">
+                  <div className="px-2 py-1.5">テンプレート</div>
                   <div className="px-2 py-1.5">Apple Notes</div>
                   <div className="px-2 py-1.5">Terminal</div>
                   <div className="px-2 py-1.5">History</div>
@@ -280,6 +281,27 @@ const LandingPage: React.FC = () => (
                 <p className="mt-2 text-sm leading-6 text-slate-400">{item.body}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-10 grid gap-6 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-300">Templates</p>
+              <h3 className="mt-2 text-xl font-semibold text-white">型から、すぐ書き始める。</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                議事録、週報、プロジェクト計画、読書ノート、障害振り返りなど、実務で使う型を組み込み済み。プレビューを見ながら文書名を決め、
+                <code className="mx-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-blue-200">{"{{title}}"}</code>
+                や
+                <code className="mx-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-blue-200">{"{{date}}"}</code>
+                を自動で埋めて作成できます。自作テンプレートの複製・初期化にも対応しています。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 md:max-w-[17rem] md:justify-end">
+              {["議事録", "週報", "プロジェクト計画", "読書ノート", "学習計画", "障害振り返り"].map((name) => (
+                <span key={name} className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300">
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
