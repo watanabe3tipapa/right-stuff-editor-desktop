@@ -152,7 +152,7 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - `vitest.config.ts` をルートに置き、`src/frontend` と `src/backend` の両方のテストを拾う。alias は `@` → `src/frontend`。
 - Node 環境には `window` / `localStorage` が無いため、`src/frontend/test/setup.ts` で最小実装を准备的し、zustand の persist が動くようにしている。
 - `.github/workflows/ci.yml` … push / PR で typecheck → lint → test → build、macOS ジョブで `npm run package`（tinyjs CLI は `curl -fsSL https://tinyjs.app/install | sh` で導入、版本は固定）。
-- `.github/workflows/release-artifacts.yml` … 手動実行で `npm run dist:universal` を回し、zip / dmg を Actions 成果物として保存する。
+- `.github/workflows/build-artifacts.yml` … 手動実行で `npm run dist:universal` を回し、zip / dmg を Actions 成果物として保存する（GitHub Releases へは公開しない）。
 - `.github/workflows/pages.yml` … ランディングページの Pages デプロイ。
 
 ### パッケージと配布
@@ -2300,3 +2300,44 @@ Electron ではなく Google Chrome を `--headless=new --remote-debugging-port=
 
 - 新しい npm パッケージは追加していない。
 - `docs/HISTORY.md` の旧 Electron 版 v0.3.1 エントリは過去の記録として残している。
+
+---
+
+## 44. 配布方針をネイティブビルドへ一本化 (2026/11/06)
+
+### 概要
+
+配布バイナリを提供せず、**各マシンでソースからネイティブビルドして導入する**方針へ切り替えた。LP と README の導線も Releases からビルド手順へ変更した。
+
+### 変更点
+
+| # | 対象 | 内容 |
+|---|------|------|
+| 1 | `LandingPage.tsx` | `RELEASES_URL` を削除し、README の「インストール（ネイティブビルド）」へリンク。ヘッダー / ヒーロー / 最終 CTA の文言を変更 |
+| 2 | `README.md` / `README.en.md` | 「インストール（ネイティブビルド）」節を追加。配布バイナリ・GitHub Releases での配布を行わないことを明記 |
+| 3 | `docs/USAGE.md` | セットアップをネイティブビルド前提に変更し、`/Applications` へのインストール手順を追加 |
+| 4 | `docs/README.md` | 導入方法の行を追加 |
+| 5 | GitHub Releases | `v0.1.0` リリース（dmg / zip）を削除。git タグは残す |
+
+### インストール手順（README 記載）
+
+```bash
+git clone https://github.com/watanabe3tipapa/right-stuff-editor-desktop.git
+cd right-stuff-editor-desktop
+npm ci
+npm run package
+ditto "dist/Right-Stuff Editor Desktop.app" "/Applications/Right-Stuff Editor Desktop.app"
+open "/Applications/Right-Stuff Editor Desktop.app"
+```
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build:landing`
+- `npm test`
+
+### 備考
+
+- `npm run package:universal` はローカルで Universal ビルドを作る用途に残している。
+- 配布パイプライン（zip / dmg 作成）はローカル確認用として残しているが、GitHub Releases へは公開しない。

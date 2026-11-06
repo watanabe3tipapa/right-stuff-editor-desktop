@@ -9,16 +9,39 @@ right-stuff-editor-desktop is a local-first macOS editor built with tinyjs (txik
 > **Write, refine, keep. Keep the whole flow on your machine.** Drafts stay as files in the folder you chose and remain usable from other editors, Finder, and Git. There is no cloud sync and no account.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](./docs/HISTORY.md)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
 
-**Quick links:** [Website](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/) · [Usage](./docs/USAGE.md) · [Dev memo](./docs/DEV-MEMO.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+**Quick links:** [Website](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/) · [Build and install](#install-native-build) · [Usage](./docs/USAGE.md) · [Dev memo](./docs/DEV-MEMO.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
 
-## Download
+## Install (native build)
 
-v0.3.1 is currently built from source. Distribution builds are also published on GitHub Releases.
+**This app does not provide prebuilt binaries, and it is not distributed through GitHub Releases.** Build it natively from source on macOS and install it into `/Applications`.
+
+### Requirements
+
+- macOS (Intel or Apple Silicon)
+- Node.js 20 or later
+- tinyjs 0.60 or later (`npm install -g tinyjs`, or follow the official instructions)
+- Xcode Command Line Tools
+
+### Build and install
+
+```bash
+git clone https://github.com/watanabe3tipapa/right-stuff-editor-desktop.git
+cd right-stuff-editor-desktop
+npm ci
+npm run package
+ditto "dist/Right-Stuff Editor Desktop.app" "/Applications/Right-Stuff Editor Desktop.app"
+open "/Applications/Right-Stuff Editor Desktop.app"
+```
+
+`npm run package` builds for the current Mac with tinyjs, adds the Apple Events usage description to `Info.plist`, and ad-hoc signs the app.
+
+- For a Universal build that runs on both Apple Silicon and Intel: `npm run package:universal`
+- To run during development: `npm run dev` and `tinyjs dev` in another terminal
 
 > The build is ad-hoc signed. It is not signed or notarized with an Apple Developer ID. If macOS warns on first launch, right-click the app and choose **Open**.
 
@@ -148,16 +171,16 @@ The landing page is built by [GitHub Actions](./.github/workflows/pages.yml) on 
 
 | Path | Content |
 |---|---|
-| `/` | Landing page (`src/landing/`) |
+| `/` | Landing page (`src/frontend/components/Landing/`) |
 | `assets/` | Landing CSS and JavaScript |
 | `favicon.*` / `site.webmanifest` | Icons and PWA metadata |
 
-The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.3.1: universal zip / dmg).
+The app itself is neither served on the web nor distributed as binaries. Build it natively from source on each machine.
 
 - Landing output: `site/`
 - App bundle: `dist/Right-Stuff Editor Desktop.app`
 - Signing: ad-hoc
-- Architecture: Universal (Intel x86_64 / Apple Silicon arm64)
+- Build target: the Mac you build on (`npm run package:universal` also produces a Universal build)
 
 ## Project layout
 
@@ -247,7 +270,7 @@ package.json
 
 ### Next candidates
 
-- [ ] Apple Developer ID signing and notarized distribution
+- [x] Retired binary distribution in favor of native builds
 - [x] Universal build (Intel Mac and Apple Silicon)
 - [ ] Native PDF export
 - [ ] Better Apple Notes checklist and attachment round-trips
@@ -256,7 +279,7 @@ package.json
 
 ### Constraints
 
-- The current target is macOS; the distributed package is Universal (Intel / Apple Silicon)
+- The current target is macOS. No prebuilt binaries are provided; `npm run package` builds for the machine you run it on (use `npm run package:universal` for a Universal build)
 - The built-in terminal requires macOS and `/usr/bin/python3`
 - Apple Notes requires macOS automation permission. Shared and locked notes are read-only
 - PDF export goes through the print dialog

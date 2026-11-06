@@ -1,7 +1,7 @@
-name: Release artifacts
+name: Build artifacts
 
 # 手動実行で Universal ビルドの zip / dmg を作り、Actions の成果物として保存する。
-# 公開は `gh release create` などの手動操作で行う。
+# 配布方針により GitHub Releases へは公開しない（各マシンでネイティブビルドして導入する）。
 
 on:
   workflow_dispatch:

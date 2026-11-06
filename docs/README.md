@@ -29,6 +29,7 @@ Right-Stuff Editor Desktop は、書式を保った編集とMarkdownの可搬性
 | 文体・記憶 | 文体プロファイル、エンティティメモリ（固有名詞の一貫表記） |
 | スキル管理 | Agent Skill Manager（現在は無効化。ASM CLI 連携は今後の課題）。 |
 | 実行形態 | tinyjs による macOS デスクトップアプリ（Web配布なし） |
+| 導入方法 | ソースからネイティブビルド（配布バイナリ・GitHub Releases での配布なし） |
 | 現行バージョン | **v0.3.1**（tinyjs デスクトップ版） |
 | ローカルファイル連携 | 開いたファイルへの上書き保存、未保存時の離脱検知 |
 | プレビュー強化 | GitHub Alerts、Mermaid、PlantUML、Archify HTML、シンタックスハイライト、KaTeX数式、50–200% 拡大 |

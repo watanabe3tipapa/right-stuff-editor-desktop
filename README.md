@@ -9,16 +9,39 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 > **書く、整える、残す。その流れを、端末内で完結させる。** 原稿は選んだフォルダのファイルに残り、他のエディタ、Finder、Git とそのまま併用できます。クラウド同期やアカウント登録はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](./docs/HISTORY.md)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
 
-**クイックリンク:** [公開サイト](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/) · [使い方](./docs/USAGE.md) · [開発メモ](./docs/DEV-MEMO.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+**クイックリンク:** [公開サイト](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/) · [ビルドと導入](#インストールネイティブビルド) · [使い方](./docs/USAGE.md) · [開発メモ](./docs/DEV-MEMO.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
 
-## ダウンロード
+## インストール（ネイティブビルド）
 
-v0.3.1 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
+**このアプリは配布バイナリを提供していません。GitHub Releases での配布も行いません。** macOS 上でソースからネイティブビルドし、`/Applications` へインストールして導入します。
+
+### 必要なもの
+
+- macOS（Intel / Apple Silicon）
+- Node.js 20 以上
+- tinyjs 0.60 以上（`npm install -g tinyjs` または公式の手順で導入）
+- Xcode Command Line Tools
+
+### ビルドとインストール
+
+```bash
+git clone https://github.com/watanabe3tipapa/right-stuff-editor-desktop.git
+cd right-stuff-editor-desktop
+npm ci
+npm run package
+ditto "dist/Right-Stuff Editor Desktop.app" "/Applications/Right-Stuff Editor Desktop.app"
+open "/Applications/Right-Stuff Editor Desktop.app"
+```
+
+`npm run package` は tinyjs で現在の Mac 向けにビルドし、Apple Events の利用目的を `Info.plist` に追加して ad-hoc 署名します。
+
+- Apple Silicon / Intel の両方で動く Universal ビルドが必要な場合: `npm run package:universal`
+- 開発中にそのまま起動する場合: `npm run dev` と別ターミナルの `tinyjs dev`
 
 > ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
 
@@ -150,16 +173,16 @@ open "dist/Right-Stuff Editor Desktop.app"
 
 | パス | 内容 |
 |---|---|
-| `/` | ランディングページ（`src/landing/`） |
+| `/` | ランディングページ（`src/frontend/components/Landing/`） |
 | `assets/` | LP 用の CSS / JavaScript |
 | `favicon.*` / `site.webmanifest` | アイコンと PWA メタデータ |
 
-アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.3.1: Universal ビルドの zip / dmg）。
+アプリ本体は Web 配信もバイナリ配布も行いません。各マシンでソースからネイティブビルドして導入します。
 
 - ランディングページ: `site/`
 - アプリパッケージ: `dist/Right-Stuff Editor Desktop.app`
 - 署名: ad-hoc
-- 対応アーキテクチャ: Universal（Intel x86_64 / Apple Silicon arm64）
+- ビルド対象: 実行中の Mac（`npm run package:universal` で Universal も作成可能）
 
 ## ディレクトリ構成
 
@@ -249,7 +272,7 @@ package.json
 
 ### 次の候補
 
-- [ ] Apple Developer ID 署名・公証を含む配布パイプライン
+- [x] 配布バイナリを廃止し、ネイティブビルド導入に一本化
 - [x] Universal ビルド（Intel Mac / Apple Silicon 両対応）
 - [ ] ネイティブ PDF 書き出し
 - [ ] Apple Notes のチェックリスト・添付ファイルの往復精度向上
@@ -258,7 +281,7 @@ package.json
 
 ### 制約
 
-- 現在の対象は macOS です。配布パッケージは Universal（Intel / Apple Silicon）です
+- 現在の対象は macOS です。配布バイナリは提供せず、`npm run package` で実行マシン向けにビルドします（Universal が必要なら `npm run package:universal`）
 - アプリ内ターミナルは macOS + `/usr/bin/python3` が必要です
 - Apple Notes 連携には macOS の自動化権限が必要です。共有・ロック済みノートは読み取り専用になります
 - PDF 書き出しは印刷ダイアログ経由です

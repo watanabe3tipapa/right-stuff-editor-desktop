@@ -3,7 +3,6 @@ import React from "react";
 type IconName =
   | "arrow"
   | "check"
-  | "download"
   | "file"
   | "github"
   | "history"
@@ -13,7 +12,7 @@ type IconName =
   | "terminal";
 
 const GITHUB_URL = "https://github.com/watanabe3tipapa/right-stuff-editor-desktop";
-const RELEASES_URL = `${GITHUB_URL}/releases`;
+const BUILD_URL = `${GITHUB_URL}/blob/main/README.md#インストールネイティブビルド`;
 const USAGE_URL = `${GITHUB_URL}/blob/main/docs/USAGE.md`;
 
 const Icon: React.FC<{ name: IconName; className?: string }> = ({
@@ -23,7 +22,6 @@ const Icon: React.FC<{ name: IconName; className?: string }> = ({
   const paths: Record<IconName, React.ReactNode> = {
     arrow: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />,
     check: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />,
-    download: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v12m0 0l4-4m-4 4l-4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />,
     file: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2zM12 14v-2m0 0V9m0 3h-2m2 0h2" />,
     github: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.1.68-.22.68-.49 0-.24-.01-1.04-.02-1.88-2.78.62-3.37-1.21-3.37-1.21-.46-1.2-1.11-1.51-1.11-1.51-.91-.64.07-.63.07-.63 1 .08 1.54 1.05 1.54 1.05.9 1.58 2.35 1.12 2.92.86.09-.67.35-1.12.64-1.38-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.29 9.29 0 015 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.95-2.35 4.81-4.58 5.07.36.32.68.93.68 1.87 0 1.35-.01 2.43-.01 2.76 0 .27.18.59.69.49A10.25 10.25 0 0022 12.23C22 6.58 17.52 2 12 2z" />,
     history: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8m0-5v5h5m4-1v4l3 2" />,
@@ -138,10 +136,10 @@ const LandingPage: React.FC = () => (
         </a>
       </nav>
       <a
-        href={RELEASES_URL}
+        href={BUILD_URL}
         className="rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
       >
-        ダウンロード
+        ビルド方法
       </a>
     </header>
 
@@ -160,10 +158,10 @@ const LandingPage: React.FC = () => (
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href={RELEASES_URL}
+              href={BUILD_URL}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3.5 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all hover:-translate-y-0.5 hover:bg-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
-              ダウンロード <Icon name="download" className="h-5 w-5" />
+              ネイティブビルドで導入 <Icon name="terminal" className="h-5 w-5" />
             </a>
             <a
               href={USAGE_URL}
@@ -179,6 +177,9 @@ const LandingPage: React.FC = () => (
             <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />MIT License</span>
             <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />Apple Silicon</span>
           </div>
+          <p className="mt-4 max-w-xl text-xs leading-5 text-slate-500">
+            配布バイナリは提供していません。macOS 上で tinyjs によりネイティブビルドし、<code className="rounded bg-slate-900 px-1">/Applications</code> へインストールして導入します。
+          </p>
         </div>
 
         <div className="relative">
@@ -346,11 +347,11 @@ const LandingPage: React.FC = () => (
           <Icon name="sparkles" className="mx-auto h-7 w-7 text-blue-200" />
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white">次の一文を、ここから。</h2>
           <p className="mt-4 leading-7 text-slate-300">
-            right-stuff-editor-desktop は macOS 向けのデスクトップアプリです。リポジトリからビルドして、自分のワークスペースで始められます。
+            配布バイナリは提供していません。macOS 上で tinyjs によりネイティブビルドし、自分のワークスペースで始められます。
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <a href={RELEASES_URL} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 hover:bg-blue-50">
-              ダウンロード <Icon name="download" className="h-5 w-5" />
+            <a href={BUILD_URL} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 hover:bg-blue-50">
+              ビルド方法を見る <Icon name="terminal" className="h-5 w-5" />
             </a>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 px-5 py-3 font-semibold text-white transition-colors hover:border-slate-400 hover:bg-white/5">
               <Icon name="github" className="h-5 w-5" /> GitHub

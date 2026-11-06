@@ -19,12 +19,15 @@ Right-Stuff Editor Desktop は、macOS 向けのローカルファースト編�
 
 ## 動作環境
 
-- macOS（Apple Silicon 推奨。パッケージは Universal：Intel / Apple Silicon 両対応）
-- Node.js 18 以上（開発時）
+- macOS（Intel / Apple Silicon）
+- Node.js 20 以上（ビルド時）
+- tinyjs 0.60 以上（ネイティブビルド時）
 - Apple Notes 連携には Notes への自動化権限
 - ターミナルには `/usr/bin/python3` と `$SHELL`（既定 `/bin/zsh`）
 
 ## セットアップ
+
+**このアプリは配布バイナリを提供していません。GitHub Releases での配布も行いません。** ソースからネイティブビルドして導入します。
 
 ```bash
 npm ci
@@ -37,14 +40,15 @@ npm run dev
 tinyjs dev
 ```
 
-パッケージ版を作る場合:
+ネイティブアプリとしてビルドし、`/Applications` へインストールする場合:
 
 ```bash
 npm run package
-open "dist/Right-Stuff Editor Desktop.app"
+ditto "dist/Right-Stuff Editor Desktop.app" "/Applications/Right-Stuff Editor Desktop.app"
+open "/Applications/Right-Stuff Editor Desktop.app"
 ```
 
-`npm run package` は Apple Events の利用目的を `Info.plist` に追加し、ad-hoc 署名します。Apple Notes 連携にはこの署名が必要です。
+`npm run package` は現在の Mac 向けにビルドし、Apple Events の利用目的を `Info.plist` に追加して ad-hoc 署名します。Apple Notes 連携にはこの署名が必要です。Intel / Apple Silicon の両対応が必要な場合は `npm run package:universal` を使います。
 
 ## 基本操作
 
