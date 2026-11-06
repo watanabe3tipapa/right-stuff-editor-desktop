@@ -82,6 +82,7 @@ const App: React.FC = () => {
   const [localFileName, setLocalFileName] = useState<string | null>(null);
   const [mdvStatus, setMdvStatus] = useState<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const idleSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void initialize();
@@ -272,6 +273,30 @@ const App: React.FC = () => {
       if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
     };
   }, [autoSaveEnabled, autoSaveInterval, isAutoSaving, triggerAutoSave]);
+
+  // 入力が止まってから 2.5 秒で保存する。ただし直近 10 秒以内に保存済みなら
+  // 定期保存に任せ、バージョン履歴が細かくなりすぎないようにする。
+  useEffect(() => {
+    if (idleSaveTimerRef.current) {
+      clearTimeout(idleSaveTimerRef.current);
+      idleSaveTimerRef.current = null;
+    }
+    if (!autoSaveEnabled || !isDirty || isAutoSaving) return undefined;
+    const lastAutoSavedAt = lastAutoSaved?.getTime() ?? 0;
+    if (Date.now() - lastAutoSavedAt < 10000) return undefined;
+
+    idleSaveTimerRef.current = setTimeout(() => {
+      const state = useEditorStore.getState();
+      if (state.isDirty && !state.isAutoSaving) void triggerAutoSave();
+    }, 2500);
+
+    return () => {
+      if (idleSaveTimerRef.current) {
+        clearTimeout(idleSaveTimerRef.current);
+        idleSaveTimerRef.current = null;
+      }
+    };
+  }, [content, autoSaveEnabled, isDirty, isAutoSaving, lastAutoSaved, triggerAutoSave]);
 
   // 未保存内容のリカバリスナップショット
   useEffect(() => {

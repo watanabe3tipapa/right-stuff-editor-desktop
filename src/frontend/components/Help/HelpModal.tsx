@@ -111,6 +111,53 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
           <div className="rounded-lg border border-gray-700 p-4">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              エディタの操作
+            </h2>
+            <div className="space-y-1.5 text-xs text-gray-400">
+              <p className="flex items-center justify-between gap-3">
+                <span>スラッシュメニュー</span>
+                <kbd className="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded font-mono text-gray-200">/</kbd>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>本文 / 見出し 1–6</span>
+                <span className="font-mono text-gray-200">⌘⌥0–6</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>箇条書き / 番号付き</span>
+                <span className="font-mono text-gray-200">⌘⇧8 / ⌘⇧7</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>チェックリスト</span>
+                <span className="font-mono text-gray-200">⌘⌥T</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>引用 / コードブロック</span>
+                <span className="font-mono text-gray-200">⌘⇧. / ⌘⌥C</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>インラインコード</span>
+                <span className="font-mono text-gray-200">⌘E</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>ブロックを上下に移動</span>
+                <span className="font-mono text-gray-200">⌘⇧↑ / ↓</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>検索 / 検索と置換</span>
+                <span className="font-mono text-gray-200">⌘F / ⌘⌥F</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>書式なしで貼り付け</span>
+                <span className="font-mono text-gray-200">⌘⇧V</span>
+              </p>
+            </div>
+            <p className="mt-2 text-[11px] leading-4 text-gray-500">
+              Windows / Linux では ⌘ を Ctrl に読み替えてください。
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-gray-700 p-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               図表のプレビュー
             </h2>
             <ul className="space-y-2 text-xs leading-5 text-gray-400">
@@ -136,10 +183,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               About
             </h2>
-            <p className="text-sm text-gray-300">Right-Stuff Editor Dash v0.2.0</p>
+            <p className="text-sm text-gray-300">Right-Stuff Editor Desktop v0.2.0</p>
             <p className="mt-1 text-xs leading-5 text-gray-400">
               リッチテキストと Markdown を切り替えながら、端末内に自動保存できる軽量エディタです。
-              AIの補完・変換・チャット、文体プロファイル、スキル管理、ターミナル、Gist 連携などを統合しています。
+              スラッシュメニュー、キーボード中心のブロック操作、検索と置換、AI の補完・変換・チャット、
+              文体プロファイル、ターミナル、Gist 連携などを統合しています。
             </p>
             <a
               href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop"

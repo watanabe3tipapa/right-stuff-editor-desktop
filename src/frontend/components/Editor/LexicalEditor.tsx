@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -6,18 +6,14 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import {
-  $createHeadingNode,
-  $createQuoteNode,
   HeadingNode,
   QuoteNode,
 } from "@lexical/rich-text";
 import {
-  INSERT_ORDERED_LIST_COMMAND,
-  INSERT_UNORDERED_LIST_COMMAND,
   ListItemNode,
   ListNode,
 } from "@lexical/list";
-import { CodeHighlightNode, CodeNode, $createCodeNode } from "@lexical/code";
+import { CodeHighlightNode, CodeNode } from "@lexical/code";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
@@ -37,6 +33,8 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  CHECK_LIST,
+  registerMarkdownShortcuts,
   TRANSFORMERS,
   type ElementTransformer,
   type TextMatchTransformer,
@@ -44,7 +42,6 @@ import {
 import {
   $getSelectionStyleValueForProperty,
   $patchStyleText,
-  $setBlocksType,
 } from "@lexical/selection";
 import {
   $createParagraphNode,
@@ -58,12 +55,14 @@ import {
   DRAGOVER_COMMAND,
   DROP_COMMAND,
   EditorState,
+  FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   PASTE_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from "lexical";
+import { $getNearestNodeOfType } from "@lexical/utils";
 import { useEditorStore } from "@/stores/editorStore";
 import { registerLexicalEditor } from "@/utils/editorBridge";
 import { ImageNode, $createImageNode, $isImageNode } from "./ImageNode";
@@ -72,6 +71,15 @@ import { GhostTextNode } from "./GhostTextNode";
 import { GhostTextPlugin } from "./GhostTextPlugin";
 import { SlashCommandPlugin } from "./SlashCommandPlugin";
 import { InlineAIPlugin } from "./InlineAIPlugin";
+import { EditorShortcutsPlugin } from "./EditorShortcutsPlugin";
+import { PlainTextPastePlugin } from "./PlainTextPastePlugin";
+import { FindReplacePlugin } from "./FindReplacePlugin";
+import { setBlockType, toggleList, type BlockKind } from "./blockOperations";
+import {
+  OPEN_FIND_COMMAND,
+  OPEN_IMAGE_POPOVER_COMMAND,
+  OPEN_LINK_POPOVER_COMMAND,
+} from "./editorCommands";
 
 interface LexicalEditorProps {
   className?: string;
@@ -80,16 +88,43 @@ interface LexicalEditorProps {
 
 const editorStyles = `
   .editor-wrapper { height: 100%; overflow: auto; background-color: #1e1e1e; }
-  .editor-inner { height: 100%; display: flex; flex-direction: column; }
+  .editor-inner { position: relative; height: 100%; display: flex; flex-direction: column; }
   .editor-content { position: relative; flex: 1; padding: 1rem; overflow: auto; }
   .editor-input { min-height: 100%; outline: none; background-color: transparent; color: #d4d4d4; font-family: 'Inter', system-ui, sans-serif; font-size: 16px; line-height: 1.7; }
   .editor-input p:first-child { margin-top: 0; }
   .editor-input h1 { font-size: 2em; font-weight: 700; margin: .67em 0; color: #e5e7eb; }
   .editor-input h2 { font-size: 1.5em; font-weight: 600; margin: .83em 0; color: #e5e7eb; }
   .editor-input h3 { font-size: 1.25em; font-weight: 600; margin: 1em 0; color: #e5e7eb; }
+  .editor-input h4 { font-size: 1.1em; font-weight: 600; margin: .9em 0; color: #e5e7eb; }
+  .editor-input h5 { font-size: 1em; font-weight: 600; margin: .9em 0; color: #e5e7eb; }
+  .editor-input h6 { font-size: .9em; font-weight: 600; margin: .9em 0; color: #d1d5db; text-transform: uppercase; letter-spacing: .04em; }
   .editor-input p { margin: 1em 0; }
   .editor-input ul, .editor-input ol { margin: 1em 0; padding-left: 2em; }
   .editor-input li { margin: .25em 0; }
+  .editor-input li[role="checkbox"] { list-style: none; position: relative; padding-left: 1.7em; }
+  .editor-input li[role="checkbox"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .28em;
+    width: 1em;
+    height: 1em;
+    border: 1.5px solid #6b7280;
+    border-radius: 3px;
+    background-color: #1f2937;
+  }
+  .editor-input li[role="checkbox"][aria-checked="true"]::before {
+    content: "✓";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-color: #2563eb;
+    background-color: #2563eb;
+    color: #fff;
+    font-size: .8em;
+    line-height: 1;
+  }
+  .editor-input li[role="checkbox"][aria-checked="true"] { color: #9ca3af; text-decoration: line-through; }
   .editor-input blockquote { margin: 1em 0; padding-left: 1em; border-left: 4px solid #569cd6; color: #d9edff; }
   .editor-input pre { background-color: #2d2d2d; padding: 1em; border-radius: .375rem; overflow-x: auto; margin: 1em 0; }
   .editor-input code { background-color: #2d2d2d; padding: .2em .4em; border-radius: .25rem; font-family: 'Fira Code', Consolas, monospace; font-size: .9em; color: #f4c7ab; }
@@ -155,6 +190,94 @@ const editorStyles = `
     font-size: 12px;
     color: #9ca3af;
   }
+  .rd-slash-group {
+    padding: 6px 10px 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #6b7280;
+  }
+  .rd-slash-shortcut {
+    margin-left: auto;
+    padding: 1px 5px;
+    border: 1px solid #374151;
+    border-radius: 4px;
+    font-family: 'Fira Code', Consolas, monospace;
+    font-size: 10px;
+    color: #9ca3af;
+    white-space: nowrap;
+  }
+  .rd-slash-footer {
+    margin-top: 4px;
+    border-top: 1px solid #374151;
+    padding: 6px 10px 2px;
+    font-size: 10px;
+    color: #6b7280;
+  }
+
+  .rd-find-bar {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 40;
+    width: min(28rem, calc(100% - 24px));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid #374151;
+    border-radius: 10px;
+    background: #1f2937;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+  }
+  .rd-find-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .rd-find-row input[type="search"],
+  .rd-find-row input[type="text"] {
+    min-width: 0;
+    flex: 1;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    background: #111827;
+    color: #e5e7eb;
+    font-size: 13px;
+  }
+  .rd-find-row input:focus { outline: none; border-color: #2563eb; }
+  .rd-find-count {
+    min-width: 4.5rem;
+    text-align: right;
+    font-size: 11px;
+    color: #9ca3af;
+    white-space: nowrap;
+  }
+  .rd-find-row button {
+    height: 30px;
+    min-width: 30px;
+    padding: 0 8px;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    background: #374151;
+    color: #e5e7eb;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .rd-find-row button:hover { background: #4b5563; }
+  .rd-find-row button.active { background: #2563eb; border-color: #2563eb; }
+  .rd-find-row button:disabled { opacity: .4; cursor: default; }
+  .rd-find-case {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #9ca3af;
+  }
+  .rd-find-case input { accent-color: #2563eb; }
 
   .rd-inline-ai-button {
     background: #2563eb;
@@ -315,7 +438,12 @@ const HR_TRANSFORMER: ElementTransformer = {
   type: "element",
 };
 
-const markdownTransformers = [...TRANSFORMERS, IMAGE_TRANSFORMER, HR_TRANSFORMER];
+const markdownTransformers = [
+  ...TRANSFORMERS,
+  CHECK_LIST,
+  IMAGE_TRANSFORMER,
+  HR_TRANSFORMER,
+];
 
 type PopoverKind = "link" | "table" | "image";
 type Popover = { kind: PopoverKind; left: number; top: number } | null;
@@ -326,6 +454,9 @@ function ToolbarPlugin() {
   const [activeColor, setActiveColor] = useState<string | null>(null);
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
   const [activeFontSize, setActiveFontSize] = useState("");
+  const [activeBlockType, setActiveBlockType] = useState<string>("paragraph");
+  const [activeListType, setActiveListType] = useState<"bullet" | "number" | "check" | null>(null);
+  const [activeAlignment, setActiveAlignment] = useState<"left" | "center" | "right" | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [popover, setPopover] = useState<Popover>(null);
@@ -345,12 +476,37 @@ function ToolbarPlugin() {
           formats.italic = selection.hasFormat("italic");
           formats.underline = selection.hasFormat("underline");
           formats.strikethrough = selection.hasFormat("strikethrough");
+          formats.code = selection.hasFormat("code");
           const color = $getSelectionStyleValueForProperty(selection, "color", "");
           setActiveColor(color || null);
           const highlight = $getSelectionStyleValueForProperty(selection, "background-color", "");
           setActiveHighlight(highlight || null);
           const fontSize = $getSelectionStyleValueForProperty(selection, "font-size", "");
           setActiveFontSize(fontSize || "");
+
+          const anchor = selection.anchor.getNode();
+          const heading = $getNearestNodeOfType(anchor, HeadingNode);
+          const quote = $getNearestNodeOfType(anchor, QuoteNode);
+          const code = $getNearestNodeOfType(anchor, CodeNode);
+          setActiveBlockType(
+            heading ? heading.getTag() : quote ? "quote" : code ? "code" : "paragraph",
+          );
+
+          const list = $getNearestNodeOfType(anchor, ListNode);
+          const listType = list?.getListType();
+          setActiveListType(
+            listType === "bullet" || listType === "number" || listType === "check"
+              ? listType
+              : null,
+          );
+
+          const topLevel = anchor.getTopLevelElement();
+          const align = /(?:^|;)\s*text-align:\s*(left|center|right)/.exec(
+            topLevel?.getStyle() ?? "",
+          )?.[1];
+          setActiveAlignment(
+            align === "left" || align === "center" || align === "right" ? align : null,
+          );
         }
         setActiveFormats(formats);
       });
@@ -408,7 +564,7 @@ function ToolbarPlugin() {
     };
   }, [popover]);
 
-  const openPopover = (kind: PopoverKind) => {
+  const openPopover = useCallback((kind: PopoverKind) => {
     const trigger = document.querySelector(`[data-toolbar-trigger="${kind}"]`);
     if (trigger) {
       const rect = trigger.getBoundingClientRect();
@@ -416,22 +572,37 @@ function ToolbarPlugin() {
     } else {
       setPopover({ kind, left: 0, top: 0 });
     }
+  }, []);
+
+  useEffect(() => {
+    const removeLink = editor.registerCommand(
+      OPEN_LINK_POPOVER_COMMAND,
+      () => {
+        openPopover("link");
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+    const removeImage = editor.registerCommand(
+      OPEN_IMAGE_POPOVER_COMMAND,
+      () => {
+        openPopover("image");
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+    return () => {
+      removeLink();
+      removeImage();
+    };
+  }, [editor, openPopover]);
+
+  const setBlock = (type: BlockKind) => {
+    setBlockType(editor, type);
   };
 
-  const setBlock = (type: "h1" | "h2" | "h3" | "quote" | "code") => {
-    editor.update(() => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) return;
-      if (type === "quote") {
-        $setBlocksType(selection, () => $createQuoteNode());
-        return;
-      }
-      if (type === "code") {
-        $setBlocksType(selection, () => $createCodeNode());
-        return;
-      }
-      $setBlocksType(selection, () => $createHeadingNode(type));
-    });
+  const applyAlignment = (align: "left" | "center" | "right") => {
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, align);
   };
 
   const applyColor = (color: string | null) => {
@@ -491,15 +662,23 @@ function ToolbarPlugin() {
           ↷
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
-        {[
-          { label: "見出し 1", content: "H1", action: () => setBlock("h1") },
-          { label: "見出し 2", content: "H2", action: () => setBlock("h2") },
-          { label: "見出し 3", content: "H3", action: () => setBlock("h3") },
-        ].map((item) => (
-          <button key={item.label} type="button" className="toolbar-btn" onClick={item.action} aria-label={item.label} title={item.label}>
-            {item.content}
-          </button>
-        ))}
+        <select
+          className="toolbar-select"
+          value={activeBlockType}
+          onChange={(event) => setBlock(event.target.value as BlockKind)}
+          aria-label="ブロックの種類"
+          title="ブロックの種類"
+        >
+          <option value="paragraph">本文</option>
+          <option value="h1">見出し 1</option>
+          <option value="h2">見出し 2</option>
+          <option value="h3">見出し 3</option>
+          <option value="h4">見出し 4</option>
+          <option value="h5">見出し 5</option>
+          <option value="h6">見出し 6</option>
+          <option value="quote">引用</option>
+          <option value="code">コードブロック</option>
+        </select>
         <span className="toolbar-divider" aria-hidden="true" />
         <button type="button" className={`toolbar-btn ${activeFormats.bold ? "toolbar-btn-active" : ""}`} onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")} aria-label="太字" title="太字 (Ctrl+B)" aria-pressed={activeFormats.bold}>
           <strong>B</strong>
@@ -510,8 +689,11 @@ function ToolbarPlugin() {
         <button type="button" className={`toolbar-btn ${activeFormats.underline ? "toolbar-btn-active" : ""}`} onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")} aria-label="下線" title="下線 (Ctrl+U)" aria-pressed={activeFormats.underline}>
           <u>U</u>
         </button>
-        <button type="button" className={`toolbar-btn ${activeFormats.strikethrough ? "toolbar-btn-active" : ""}`} onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")} aria-label="取り消し線" title="取り消し線" aria-pressed={activeFormats.strikethrough}>
+        <button type="button" className={`toolbar-btn ${activeFormats.strikethrough ? "toolbar-btn-active" : ""}`} onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")} aria-label="取り消し線" title="取り消し線 (Ctrl+Shift+X)" aria-pressed={activeFormats.strikethrough}>
           <s>S</s>
+        </button>
+        <button type="button" className={`toolbar-btn ${activeFormats.code ? "toolbar-btn-active" : ""}`} onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")} aria-label="インラインコード" title="インラインコード (Ctrl+E)" aria-pressed={activeFormats.code}>
+          {"{ }"}
         </button>
         <select
           className="toolbar-select"
@@ -578,32 +760,58 @@ function ToolbarPlugin() {
           </button>
         )}
         <span className="toolbar-divider" aria-hidden="true" />
-        <button type="button" className="toolbar-btn" data-toolbar-trigger="link" onClick={() => openPopover("link")} aria-label="リンクを挿入" title="リンクを挿入" aria-expanded={popover?.kind === "link"}>
+        <button type="button" className="toolbar-btn" data-toolbar-trigger="link" onClick={() => openPopover("link")} aria-label="リンクを挿入" title="リンクを挿入 (Ctrl+Alt+K)" aria-expanded={popover?.kind === "link"}>
           🔗
         </button>
         <button type="button" className="toolbar-btn" data-toolbar-trigger="image" onClick={() => openPopover("image")} aria-label="画像を挿入" title="画像を挿入 (URL)" aria-expanded={popover?.kind === "image"}>
           🖼
         </button>
+        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(OPEN_FIND_COMMAND, {})} aria-label="文書内を検索" title="文書内を検索 (Ctrl+F)">
+          🔍
+        </button>
+        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(OPEN_FIND_COMMAND, { replace: true })} aria-label="検索と置換" title="検索と置換 (Ctrl+Alt+F)">
+          ⇄
+        </button>
         <span className="toolbar-divider" aria-hidden="true" />
-        <button type="button" className="toolbar-btn" data-toolbar-trigger="table" onClick={() => openPopover("table")} aria-label="表を挿入" title="表を挿入" aria-expanded={popover?.kind === "table"}>
+        <button type="button" className="toolbar-btn" data-toolbar-trigger="table" onClick={() => openPopover("table")} aria-label="表を挿入" title="表を挿入 (Ctrl+Alt+A)" aria-expanded={popover?.kind === "table"}>
           ▦
         </button>
-        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)} aria-label="水平線を挿入" title="水平線を挿入">
+        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)} aria-label="水平線を挿入" title="水平線を挿入 (Ctrl+Alt+S)">
           ―
         </button>
         <span className="toolbar-divider" aria-hidden="true" />
-        <button type="button" className="toolbar-btn" onClick={() => setBlock("quote")} aria-label="引用" title="引用">
-          “
-        </button>
-        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)} aria-label="箇条書き" title="箇条書き">
+        <button type="button" className={`toolbar-btn ${activeListType === "bullet" ? "toolbar-btn-active" : ""}`} onClick={() => toggleList(editor, "bullet")} aria-label="箇条書き" title="箇条書き (Ctrl+Shift+8)" aria-pressed={activeListType === "bullet"}>
           •
         </button>
-        <button type="button" className="toolbar-btn" onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)} aria-label="番号付きリスト" title="番号付きリスト">
+        <button type="button" className={`toolbar-btn ${activeListType === "number" ? "toolbar-btn-active" : ""}`} onClick={() => toggleList(editor, "number")} aria-label="番号付きリスト" title="番号付きリスト (Ctrl+Shift+7)" aria-pressed={activeListType === "number"}>
           1.
         </button>
-        <button type="button" className="toolbar-btn" onClick={() => setBlock("code")} aria-label="コードブロック" title="コードブロック">
-          &lt;&gt;
+        <button type="button" className={`toolbar-btn ${activeListType === "check" ? "toolbar-btn-active" : ""}`} onClick={() => toggleList(editor, "check")} aria-label="チェックリスト" title="チェックリスト (Ctrl+Alt+T)" aria-pressed={activeListType === "check"}>
+          ☑
         </button>
+        <button type="button" className="toolbar-btn" onClick={() => setBlock("code")} aria-label="コードブロック" title="コードブロック (Ctrl+Alt+C)">
+          &lt;/&gt;
+        </button>
+        <span className="toolbar-divider" aria-hidden="true" />
+        {([
+          { align: "left", label: "左揃え", title: "左揃え (Ctrl+Shift+L)", path: "M4 6h16M4 10h10M4 14h16M4 18h10" },
+          { align: "center", label: "中央揃え", title: "中央揃え (Ctrl+Shift+E)", path: "M4 6h16M7 10h10M4 14h16M7 18h10" },
+          { align: "right", label: "右揃え", title: "右揃え (Ctrl+Shift+R)", path: "M4 6h16M10 10h10M4 14h16M10 18h10" },
+        ] as const).map((item) => (
+          <button
+            key={item.align}
+            type="button"
+            className={`toolbar-btn ${activeAlignment === item.align ? "toolbar-btn-active" : ""}`}
+            onClick={() => applyAlignment(item.align)}
+            aria-label={item.label}
+            title={item.title}
+            aria-pressed={activeAlignment === item.align}
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" d={item.path} />
+            </svg>
+          </button>
+        ))}
       </div>
 
       {popover?.kind === "link" && (
@@ -814,6 +1022,15 @@ function InitialContentPlugin({ content }: { content: string }) {
   return null;
 }
 
+function MarkdownShortcutsPlugin() {
+  const [editor] = useLexicalComposerContext();
+  useEffect(
+    () => registerMarkdownShortcuts(editor, markdownTransformers),
+    [editor],
+  );
+  return null;
+}
+
 function EditorPlugins() {
   const { setContent } = useEditorStore();
   const isInitialChange = useRef(true);
@@ -840,6 +1057,10 @@ function EditorPlugins() {
       <OnChangePlugin onChange={onChange} ignoreSelectionChange />
       <ImagesPlugin />
       <EditorRegistrationPlugin />
+      <MarkdownShortcutsPlugin />
+      <EditorShortcutsPlugin />
+      <PlainTextPastePlugin />
+      <FindReplacePlugin />
       <TypewriterPlugin />
       <GhostTextPlugin />
       <SlashCommandPlugin />

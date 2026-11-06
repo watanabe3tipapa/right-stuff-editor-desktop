@@ -54,7 +54,7 @@ const features = [
   {
     icon: "sparkles" as const,
     title: "書くそばに、AI を",
-    body: "ゴーストテキスト、スラッシュコマンド、選択範囲の校正・要約・翻訳、AI チャット。18 種のプロバイダーから選択できます。",
+    body: "ゴーストテキスト、スラッシュコマンド、選択範囲の校正・要約・翻訳、AI チャット。19 種のプロバイダーから選択できます。",
   },
   {
     icon: "history" as const,
@@ -82,12 +82,30 @@ const workflow = [
   {
     step: "02",
     title: "書いて、整える",
-    body: "リッチテキストと Markdown を切り替え、プレビューで確認。AI と Notes は必要なときだけ開きます。",
+    body: "リッチテキストと Markdown を切り替え、プレビューで確認。スラッシュメニューとキーボード操作で、手を止めずに整えられます。",
   },
   {
     step: "03",
     title: "そのまま残す",
     body: "変更は Markdown ファイルへ保存され、履歴とバックアップが端末内に積み重なります。",
+  },
+];
+
+const editingTools = [
+  {
+    icon: "terminal" as const,
+    title: "スラッシュで、呼び出す",
+    body: "行頭で / を入力すると、見出し・リスト・チェックリスト・表・リンク・検索をグループ別に表示。絞り込みながら Enter で決定できます。",
+  },
+  {
+    icon: "notes" as const,
+    title: "キーボードで、組み立てる",
+    body: "見出し、引用、コード、リスト、ブロック移動をショートカットで操作。選択範囲は Cmd/Ctrl+E でインラインコードにできます。",
+  },
+  {
+    icon: "history" as const,
+    title: "検索して、置き換える",
+    body: "Cmd/Ctrl+F で文書内を検索し、前後の一致へ移動。置換モードでは 1 件ずつ、またはすべてをまとめて置き換えられます。",
   },
 ];
 
@@ -138,7 +156,7 @@ const LandingPage: React.FC = () => (
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
             Markdown の可搬性、リッチテキストの書き心地、Apple Notes と AI。
-            right-stuff-editor-desktop は、原稿を端末のフォルダに残したまま、書くための道具をひとつにまとめます。
+            スラッシュメニューとキーボード操作を備えた right-stuff-editor-desktop は、原稿を端末のフォルダに残したまま、書くための道具をひとつにまとめます。
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
@@ -196,7 +214,9 @@ const LandingPage: React.FC = () => (
                   <span className="rounded border border-slate-700 px-1.5 py-1">H1</span>
                   <span className="rounded border border-slate-700 px-1.5 py-1">B</span>
                   <span className="rounded border border-slate-700 px-1.5 py-1 italic">I</span>
+                  <span className="rounded border border-slate-700 px-1.5 py-1">☑</span>
                   <span className="rounded border border-slate-700 px-1.5 py-1">Link</span>
+                  <span className="rounded border border-slate-700 px-1.5 py-1">🔍</span>
                   <span className="ml-auto text-slate-600">Markdown</span>
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-white">次の一文を、ここから。</h2>
@@ -211,6 +231,7 @@ const LandingPage: React.FC = () => (
                 </div>
                 <div className="mt-7 rounded-lg border border-blue-400/20 bg-blue-400/5 p-3 text-xs text-blue-100/80">
                   <span className="font-semibold text-blue-200">AI</span> 入力を止めると、続きを候補表示。Tab で採用できます。
+                  <span className="mt-1 block text-blue-100/60">「/」でブロックを呼び出し、⌘F で文書内を検索。</span>
                 </div>
               </div>
             </div>
@@ -241,6 +262,25 @@ const LandingPage: React.FC = () => (
               <p className="mt-2 text-sm leading-6 text-slate-400">{feature.body}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto w-full max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 sm:p-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">Editing</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">書く速度を、落とさない。</h2>
+          <p className="mt-4 max-w-2xl leading-7 text-slate-400">
+            メニューを探す時間を減らし、思いついた順に書けるように。よく使う操作は、手元のキーボードから呼び出せます。
+          </p>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            {editingTools.map((item) => (
+              <div key={item.title} className="border-t border-slate-700 pt-5">
+                <Icon name={item.icon} className="h-5 w-5 text-blue-300" />
+                <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{item.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

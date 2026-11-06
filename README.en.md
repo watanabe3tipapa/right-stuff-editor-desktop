@@ -48,9 +48,11 @@ A browser-only editor is convenient, but your drafts live inside the browser's s
 ## Features
 
 - **Workspace** — choose a folder and recursively list Markdown / TXT. Create, rename, delete, and reload
-- **Rich-text editing** — headings, bold, italic, underline, strikethrough, color, highlight, lists, checklists, quotes, code blocks, links, tables
-- **Markdown sync** — save as Markdown with frontmatter, with source view and preview
-- **Autosave and conflict handling** — saves every 30 seconds by default; prompts for reload when a file changed externally
+- **Rich-text editing** — headings 1–6, bold, italic, underline, strikethrough, inline code, color, highlight, lists, checklists, quotes, code blocks, links, tables, and left/center/right alignment
+- **Keyboard-first editing** — slash menu at the start of a line, block-type shortcuts, block movement, and paste as plain text
+- **Find and replace** — move through matches, replace one or all, with case sensitivity
+- **Markdown sync** — save as Markdown with frontmatter, with source view and preview; typing `# ` or `- [ ] ` converts blocks as you write
+- **Autosave and conflict handling** — saves every 30 seconds by default and 2.5 seconds after typing stops (skipped if the last save was under 10 seconds ago); prompts for reload when a file changed externally
 - **Version history** — records the previous content on every save and restores any version
 - **Recovery** — snapshots unsaved work every 15 seconds and offers to restore on next launch
 - **Backups** — periodic workspace copies as JSON or Markdown under `.right-stuff/backups`
@@ -193,8 +195,8 @@ package.json
 
 1. After launch, choose a workspace from the folder name in the sidebar
 2. Create a document with **+**, or open a Markdown file from the list
-3. Format with the toolbar and switch to Markdown or preview when needed
-4. Changes autosave; press `⌘S` to save manually
+3. Format with the toolbar and switch to Markdown or preview when needed; type `/` at the start of a line to insert a block
+4. Changes autosave; press `⌘S` to save manually, `⌘F` to search the document, and `⌘⌥F` to replace
 5. Open History to review or restore previous versions
 6. Open Notes to browse Apple Notes folders and edit a selected note
 7. Use the export menu to write Markdown, HTML, JSON, TXT, DOCX, or an Ollama Modelfile
@@ -208,6 +210,9 @@ package.json
 - [x] PlantUML rendering (configurable server URL, explicit external transfer)
 - [x] Archify HTML embedding (workspace path or inline HTML)
 - [x] Unit tests for diagram previews
+- [x] Grouped, filtered slash menu with shortcut hints
+- [x] Keyboard operations for headings 1–6, checklists, quotes, code, and block movement
+- [x] Find and replace, inline code, alignment, and paste as plain text
 
 ### v0.1.0
 

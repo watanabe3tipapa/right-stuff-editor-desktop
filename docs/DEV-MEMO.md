@@ -5,6 +5,40 @@
 
 ---
 
+## 2026-11-06 エディタ UX の強化（quiet-md を参考）
+
+quiet-md（Rust + GPUI の Markdown エディタ）の操作感を参考に、Lexical のまま編集 UX を追加した。実装基盤（tinyjs + React + Lexical）は変更していない。
+
+### 追加した操作
+
+- **ブロックショートカット**（`EditorShortcutsPlugin.tsx`）
+  - `Cmd/Ctrl+Alt+0–6` で本文 / 見出し 1–6、`Cmd/Ctrl+Alt+T` でチェックリスト、`Cmd/Ctrl+Alt+C` でコードブロック。
+  - `Cmd/Ctrl+Shift+8` / `7` で箇条書き / 番号付き、`Cmd/Ctrl+Shift+.` で引用、`Cmd/Ctrl+Shift+↑/↓` でトップレベルブロックを移動。
+  - `Cmd/Ctrl+E` でインラインコード。IME 変換中（`isComposing` / `keyCode === 229`）は処理しない。
+- **スラッシュメニュー**（`slashCommands.ts` / `SlashCommandPlugin.tsx`）
+  - 18 コマンドを「基本」「挿入」にグループ化。ラベル前方一致 → キーワード前方一致 → 部分一致の順にランク付けし、同点は定義順を維持する。
+  - 各項目にショートカットを表示し、メニュー下部に `↑↓ / Enter / Esc` の操作を明示。
+- **検索と置換**（`FindReplacePlugin.tsx`）
+  - `TextNode` ごとに一致を収集し、選択範囲を移動。置換は 1 件ずつ、またはノード単位で後ろから置き換える。
+  - `Cmd/Ctrl+F` / `Cmd/Ctrl+Alt+F` で起動。`PASTE_COMMAND` と違い、`keydown` で開くためブラウザ既定の検索を抑止できる。
+  - 現状はインライン要素をまたぐ一致と全一致ハイライトには未対応。
+- **書式なし貼り付け**（`PlainTextPastePlugin.tsx`）
+  - `ClipboardEvent` には `shiftKey` が無いため、直前の `keydown`（`Cmd/Ctrl+Shift+V`）を ref に記録してから `PASTE_COMMAND` で処理する。
+- **Markdown 入力支援**
+  - `registerMarkdownShortcuts(editor, markdownTransformers)` を追加。`# `、`- `、`1. `、`> `、コードフェンス、`- [ ] ` などを入力中に変換する。
+- **ツールバー**
+  - ブロック種別セレクト（本文 / H1–H6 / 引用 / コード）、インラインコード、チェックリスト、左右中央揃え、検索 / 置換ボタンを追加。選択位置に応じて active 表示を更新する。
+- **自動保存**
+  - 既存の 30 秒間隔に加え、入力停止から 2.5 秒で保存する。ただし直近 10 秒以内に保存済みならスキップし、履歴が細かくなりすぎないようにする。
+
+### テスト
+
+- `slashCommands.test.ts` を追加（空クエリ、ラベル前方一致、キーワード一致、日本語ラベル、未知クエリ）。
+- `blockOperations.test.ts` を追加（見出し変換、リスト解除、リストのトグル、ブロック移動）。
+- `npm run typecheck` / `npm run lint` / `npm test`（9 files / 69 tests）/ `npm run build` が成功。
+
+---
+
 ## 2026-10-21 tinyjs デスクトップ版 技術スタック
 
 Electron / Web 版から、tinyjs による macOS ネイティブ・デスクトップアプリへ移行した。以下の記録は v0.1.0 時点の実装判断と、触る際に知っておくべき技術的事項をまとめたもの。
@@ -18,7 +52,7 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 | エディタ | Lexical 0.32 | Rich Text / Markdown の双方向切替 |
 | スタイル | Tailwind CSS v4 | `@tailwindcss/vite`、`@tailwindcss/typography` |
 | 永続化 | `tjs:sqlite` + Markdown ファイル | DB は WAL モード |
-| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度、図表プレビュー（60 tests） |
+| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度、図表プレビュー、スラッシュコマンド、ブロック操作（69 tests） |
 
 - バックエンドは `src/backend/main.ts` の `export const api` にメソッドを列挙する方式。`init(app)` で DB とワークスペースを初期化し、`onWindowClosed()` で PTY を停止する。
 - フロントエンドは `window.tiny.api.call(method, params)` で呼び出す。ブリッジは `src/frontend/utils/desktop.ts` に集約し、バックエンドの生 API を画面から直接触らない。

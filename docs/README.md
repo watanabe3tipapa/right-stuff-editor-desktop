@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop"><img src="https://img.shields.io/badge/version-v0.1.0-2563eb?style=flat-square" alt="Version v0.1.0" /></a>
+  <a href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop"><img src="https://img.shields.io/badge/version-v0.2.0-2563eb?style=flat-square" alt="Version v0.2.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/status-development-f59e0b?style=flat-square" alt="Development status" />
 </p>
@@ -22,16 +22,16 @@ Right-Stuff Editor Desktop は、書式を保った編集とMarkdownの可搬性
 
 | 項目 | 内容 |
 | --- | --- |
-| 編集方式 | LexicalによるリッチテキストとMarkdownの切替 |
+| 編集方式 | LexicalによるリッチテキストとMarkdownの切替。スラッシュメニュー、キーボード中心のブロック操作、検索と置換に対応 |
 | 保存先 | ワークスペース内の Markdown ファイル + アプリデータの SQLite。クラウド同期は実装していません。 |
-| AI連携 | Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、OpenRouter、Perplexity、xAI、Hugging Face、AnythingLLM、LM Studio、Foundry Local、Unsloth、Apple Foundation Models、カスタム（計18種） |
+| AI連携 | Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、OpenRouter、Perplexity、xAI、Hugging Face、AnythingLLM、LM Studio、Foundry Local、Unsloth、Apple Foundation Models、Sarashina、カスタム（計19種） |
 | AI機能 | ゴーストテキスト補完、スラッシュコマンド、選択テキストのインラインAI変換、AIチャット |
 | 文体・記憶 | 文体プロファイル、エンティティメモリ（固有名詞の一貫表記） |
 | スキル管理 | Agent Skill Manager（現在は無効化。ASM CLI 連携は今後の課題）。 |
 | 実行形態 | tinyjs による macOS デスクトップアプリ（Web配布なし） |
-| 現行バージョン | **v0.1.0**（tinyjs デスクトップ版） |
+| 現行バージョン | **v0.2.0**（tinyjs デスクトップ版） |
 | ローカルファイル連携 | 開いたファイルへの上書き保存、未保存時の離脱検知 |
-| プレビュー強化 | GitHub Alerts、Mermaid図表、シンタックスハイライト、KaTeX数式 |
+| プレビュー強化 | GitHub Alerts、Mermaid、PlantUML、Archify HTML、シンタックスハイライト、KaTeX数式、50–200% 拡大 |
 | mdv連携 | 現在は無効（内蔵プレビューを利用） |
 
 ## 旧 Dash 版の主な変更（アーカイブ）
@@ -66,7 +66,7 @@ Right-Stuff Editor Desktop は、書式を保った編集とMarkdownの可搬性
 
 ### 編集とプレビュー
 
-リッチテキストモードでは見出し、太字、引用、リスト、コードブロックなどを操作できます。Markdownモードへ切り替えて直接記述することもでき、同じ内容をプレビューで確認できます。文書は複数作成でき、サイドバーから開く、名前を変更する、削除するといった操作に対応します。
+リッチテキストモードでは見出し 1–6、太字、引用、リスト、チェックリスト、コードブロック、インラインコード、リンク、表、左右中央揃えなどを操作できます。行頭の `/` でスラッシュメニューを開き、キーボードからブロック種別の変更や上下移動も行えます。`Ctrl/Cmd + F` で文書内を検索し、`Ctrl/Cmd + Alt + F` で置換できます。Markdownモードへ切り替えて直接記述することもでき、同じ内容をプレビューで確認できます。文書は複数作成でき、サイドバーから開く、名前を変更する、削除するといった操作に対応します。
 
 プレビューはGitHubスタイルの表示に対応しています。
 
@@ -74,6 +74,8 @@ Right-Stuff Editor Desktop は、書式を保った編集とMarkdownの可搬性
 | --- | --- |
 | GitHub Alerts | `> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]` を色分け表示 |
 | Mermaid図表 | ` ```mermaid ` コードブロックをダイアグラムとして描画（テーマ連動） |
+| PlantUML | ` ```plantuml ` / ` ```puml ` をサーバー経由で描画（URL 変更・無効化が可能） |
+| Archify | ` ```archify ` にワークスペース内 HTML のパス、または HTML を直接埋め込み |
 | シンタックスハイライト | コードブロックを言語ごとに色分け（rehype-highlight） |
 | GFM | テーブル・チェックリスト・取り消し線・自動リンク |
 
@@ -91,9 +93,9 @@ AIはチャットだけでなく、編集中のテキストそのものにも働
 | AI チャット | LLMと会話。編集中の文書を文脈として自動送信可能 |
 | スキル管理 | Agent Skill Manager（現在は無効） |
 
-#### LLMプロバイダ（計18種）
+#### LLMプロバイダ（計19種）
 
-Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、OpenRouter、Perplexity、xAI、Hugging Face、AnythingLLM、LM Studio、Foundry Local、Unsloth、Apple Foundation Models、カスタムエンドポイント。多くは OpenAI 互換 API で、設定画面からモデル一覧を自動取得します。
+Ollama、OpenAI、Anthropic、Gemini、Groq、DeepSeek、Mistral、Together、OpenRouter、Perplexity、xAI、Hugging Face、AnythingLLM、LM Studio、Foundry Local、Unsloth、Apple Foundation Models、Sarashina、カスタムエンドポイント。多くは OpenAI 互換 API で、設定画面からモデル一覧を自動取得します。
 
 #### Unsloth
 
@@ -136,7 +138,7 @@ mdv 連携は現在の tinyjs 版では無効です。代わりに内蔵プレ�
 
 ### 保存とエクスポート
 
-編集内容は既定で30秒ごとにワークスペースへ自動保存されます。保存ステータスは画面下部で確認でき、失敗時には再試行できます。ファイルの読み込み、Markdown、HTML、PDF、JSON、TXT、DOCX、Ollama Modelfile への書き出しにも対応します。PDF は印刷ダイアログ経由です。
+編集内容は既定で30秒ごとにワークスペースへ自動保存されます。入力が止まった場合も、直近の保存から10秒以上経っていれば2.5秒後に保存します。保存ステータスは画面下部で確認でき、失敗時には再試行できます。ファイルの読み込み、Markdown、HTML、PDF、JSON、TXT、DOCX、Ollama Modelfile への書き出しにも対応します。PDF は印刷ダイアログ経由です。
 
 ### GitHub Gist連携
 
@@ -206,7 +208,7 @@ macOS の `/usr/bin/python3` を使って PTY ブリッジを起動し、`$SHELL
 9. ローカルファイルを開くと、保存時に同じファイルへ上書きできます。フッターにファイル名が表示されます。
 10. Notes ボタンから Apple Notes のフォルダーとノートを選び、そのまま編集できます。
 
-主要なショートカットは、`Ctrl/Cmd + S` の保存、`Ctrl/Cmd + ,` の設定、`Ctrl/Cmd + Shift + Z` のZenモード、`Ctrl/Cmd + Shift + T` のタイプライターモード、`Ctrl/Cmd + Shift + A` のスキル管理、`Ctrl/Cmd + \`` のターミナル、`/` のスラッシュコマンドです。設定ではテーマ、LLMプロバイダー、エンドポイント、モデル、APIキー、AI補完、文体プロファイル、エンティティメモリ、GitHub Gist認証を管理できます。
+主要なショートカットは、`Ctrl/Cmd + S` の保存、`Ctrl/Cmd + F` の文書内検索、`Ctrl/Cmd + Alt + F` の検索と置換、`Ctrl/Cmd + ,` の設定、`Ctrl/Cmd + Shift + Z` のZenモード、`Ctrl/Cmd + Shift + T` のタイプライターモード、`Ctrl/Cmd + Shift + A` のスキル管理、`Ctrl/Cmd + \`` のターミナル、`/` のスラッシュコマンドです。設定ではテーマ、LLMプロバイダー、エンドポイント、モデル、APIキー、AI補完、文体プロファイル、エンティティメモリ、GitHub Gist認証を管理できます。
 
 ## データとセキュリティ
 
