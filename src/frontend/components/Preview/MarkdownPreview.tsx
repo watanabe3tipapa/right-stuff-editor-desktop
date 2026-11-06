@@ -1,15 +1,22 @@
-import React, { useEffect, useRef } from "react";
+import React, { useMemo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { usePreviewStore } from "@/stores/previewStore";
+import { isPlantUmlLanguage } from "@/utils/diagramEncoding";
+import { MermaidDiagram } from "./MermaidDiagram";
+import { PlantUmlDiagram } from "./PlantUmlDiagram";
+import { ArchifyEmbed } from "./ArchifyEmbed";
 
 interface MarkdownPreviewProps {
   content: string;
   className?: string;
   theme?: "light" | "dark" | "system";
+  workspaceRoot?: string | null;
+  documentPath?: string | null;
 }
 
 interface AlertBlock {
@@ -23,6 +30,8 @@ const alertStyles: Record<string, { label: string; border: string; background: s
   WARNING: { label: "Warning", border: "border-amber-500", background: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-300" },
   CAUTION: { label: "Caution", border: "border-red-500", background: "bg-red-500/10", text: "text-red-700 dark:text-red-300" },
 };
+
+const DIAGRAM_LANGUAGE = /language-(mermaid|plantuml|puml|archify)\b/;
 
 function firstTextValue(node: any): string {
   if (!node) return "";
@@ -78,81 +87,91 @@ function AlertBlockComponent({ block, children }: { block: AlertBlock; children?
   );
 }
 
-const components: Components = {
-  blockquote: ({ node, children, ...props }) => {
-    const block = parseAlertNode(node);
-    if (block) {
-      return <AlertBlockComponent block={block}>{children}</AlertBlockComponent>;
-    }
-    return (
-      <blockquote
-        className="my-4 border-l-4 border-gray-500 bg-gray-700/30 pl-4 py-1 text-gray-300"
-        {...props}
-      >
-        {children}
-      </blockquote>
-    );
-  },
-  code: ({ node: _node, className, children, ...props }) => {
-    const isBlock = Boolean(className);
-    const match = /language-(\w+)/.exec(className || "");
-    if (isBlock && match && match[1] === "mermaid") {
+export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
+  content,
+  className = "",
+  theme = "light",
+  workspaceRoot = null,
+  documentPath = null,
+}) => {
+  const plantUmlEnabled = usePreviewStore((state) => state.plantUmlEnabled);
+  const plantUmlServer = usePreviewStore((state) => state.plantUmlServer);
+
+  const components = useMemo<Components>(() => ({
+    pre: ({ node: _node, children, ...props }) => {
+      const child = React.Children.toArray(children)[0];
+      if (React.isValidElement(child)) {
+        const childClassName = (child.props as { className?: string }).className ?? "";
+        if (DIAGRAM_LANGUAGE.test(childClassName)) {
+          return <>{children}</>;
+        }
+      }
       return (
-        <div className="my-4 overflow-x-auto rounded-lg bg-gray-900 p-4 flex justify-center">
-          <pre className="mermaid">{String(children)}</pre>
-        </div>
+        <pre className="my-4 overflow-x-auto rounded-lg bg-gray-950/80 p-4 text-sm" {...props}>
+          {children}
+        </pre>
       );
-    }
-    if (isBlock) {
+    },
+    blockquote: ({ node, children, ...props }) => {
+      const block = parseAlertNode(node);
+      if (block) {
+        return <AlertBlockComponent block={block}>{children}</AlertBlockComponent>;
+      }
       return (
-        <code className={className} {...props}>
+        <blockquote
+          className="my-4 border-l-4 border-gray-500 bg-gray-700/30 pl-4 py-1 text-gray-300"
+          {...props}
+        >
+          {children}
+        </blockquote>
+      );
+    },
+    code: ({ node: _node, className: codeClassName, children, ...props }) => {
+      const match = /language-([\w-]+)/.exec(codeClassName || "");
+      const language = match?.[1]?.toLowerCase();
+      const source = String(children).replace(/\n$/, "");
+
+      if (language === "mermaid") {
+        return <MermaidDiagram code={source} theme={theme} />;
+      }
+      if (language && isPlantUmlLanguage(language)) {
+        return (
+          <PlantUmlDiagram
+            code={source}
+            server={plantUmlServer}
+            enabled={plantUmlEnabled}
+          />
+        );
+      }
+      if (language === "archify") {
+        return (
+          <ArchifyEmbed
+            source={source}
+            workspaceRoot={workspaceRoot}
+            documentPath={documentPath}
+          />
+        );
+      }
+      if (codeClassName) {
+        return (
+          <code className={codeClassName} {...props}>
+            {children}
+          </code>
+        );
+      }
+      return (
+        <code
+          className="rounded bg-gray-700/60 px-1.5 py-0.5 text-[0.85em] text-pink-300"
+          {...props}
+        >
           {children}
         </code>
       );
-    }
-    return (
-      <code
-        className="rounded bg-gray-700/60 px-1.5 py-0.5 text-[0.85em] text-pink-300"
-        {...props}
-      >
-        {children}
-      </code>
-    );
-  },
-};
-
-export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, className = "", theme = "light" }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const runMermaid = async () => {
-      if (typeof window === "undefined") return;
-      const mermaid = (await import("mermaid")).default;
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: "strict",
-        theme: theme === "dark" ? "dark" : "default",
-      });
-      const elements = container.querySelectorAll("pre.mermaid");
-      if (elements.length === 0) return;
-      try {
-        await mermaid.run({ nodes: Array.from(elements) as HTMLElement[] });
-      } catch {
-        // ignore render failure (invalid diagram)
-      }
-    };
-
-    void runMermaid();
-  }, [content, theme]);
+    },
+  }), [theme, workspaceRoot, documentPath, plantUmlEnabled, plantUmlServer]);
 
   return (
-    <div
-      ref={containerRef}
-      className={`markdown-preview prose prose-invert max-w-none ${className}`}
-    >
+    <div className={`markdown-preview prose prose-invert max-w-none ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[

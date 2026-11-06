@@ -111,9 +111,32 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
           <div className="rounded-lg border border-gray-700 p-4">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              図表のプレビュー
+            </h2>
+            <ul className="space-y-2 text-xs leading-5 text-gray-400">
+              <li>
+                <code className="rounded bg-gray-700 px-1 py-0.5 font-mono text-gray-200">{"```mermaid"}</code>
+                {" "}— フローチャート、シーケンス図、ガントチャートなど
+              </li>
+              <li>
+                <code className="rounded bg-gray-700 px-1 py-0.5 font-mono text-gray-200">{"```plantuml"}</code>
+                {" "}— PlantUML サーバー経由で描画（設定で URL を変更可能）
+              </li>
+              <li>
+                <code className="rounded bg-gray-700 px-1 py-0.5 font-mono text-gray-200">{"```archify"}</code>
+                {" "}— ワークスペース内の Archify HTML のパス、または HTML を直接埋め込み
+              </li>
+            </ul>
+            <p className="mt-2 text-[11px] leading-4 text-gray-500">
+              図の右上のメニューからソースのコピー、SVG の保存、別ウィンドウでの表示ができます。
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-gray-700 p-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               About
             </h2>
-            <p className="text-sm text-gray-300">Right-Stuff Editor Dash v0.5.0</p>
+            <p className="text-sm text-gray-300">Right-Stuff Editor Dash v0.2.0</p>
             <p className="mt-1 text-xs leading-5 text-gray-400">
               リッチテキストと Markdown を切り替えながら、端末内に自動保存できる軽量エディタです。
               AIの補完・変換・チャット、文体プロファイル、スキル管理、ターミナル、Gist 連携などを統合しています。

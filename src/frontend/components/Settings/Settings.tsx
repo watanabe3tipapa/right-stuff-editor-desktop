@@ -7,6 +7,7 @@ import { useStyleStore, type WritingStyleProfile } from "@/stores/styleStore";
 import { useEntityStore, ENTITY_TYPE_LABELS, type EntityType } from "@/stores/entityStore";
 import { useTimeTrackingStore } from "@/stores/timeTrackingStore";
 import { useBackupSettingsStore } from "@/stores/backupSettingsStore";
+import { usePreviewStore } from "@/stores/previewStore";
 import { useTemplateStore, BUILTIN_TEMPLATE_CATEGORIES } from "@/stores/templateStore";
 import { useEditorStore } from "@/stores/editorStore";
 import type { LLMProvider } from "@/utils/llmClient";
@@ -137,6 +138,12 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     setFormat: setBackupFormat,
   } = useBackupSettingsStore();
   const {
+    plantUmlEnabled,
+    plantUmlServer,
+    setPlantUmlEnabled,
+    setPlantUmlServer,
+  } = usePreviewStore();
+  const {
     templates,
     load: loadTemplates,
     add: addTemplate,
@@ -153,6 +160,7 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const [plantUmlServerInput, setPlantUmlServerInput] = useState(plantUmlServer);
   const [models, setModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [patInput, setPatInput] = useState("");
@@ -172,6 +180,10 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const [entityType, setEntityType] = useState<EntityType>("other");
   const [entityNotes, setEntityNotes] = useState("");
   const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPlantUmlServerInput(plantUmlServer);
+  }, [plantUmlServer]);
 
   useEffect(() => {
     if (isOpen && activeTab === "templates") {
@@ -391,6 +403,41 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                     </button>
                   ))}
                 </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="mb-2 block text-sm font-medium text-gray-300">プレビュー</legend>
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={plantUmlEnabled}
+                    onChange={(e) => setPlantUmlEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                  />
+                  PlantUML の図をレンダリングする
+                </label>
+                <div className="mt-2">
+                  <label className="mb-1 block text-xs text-gray-400" htmlFor="plantuml-server">
+                    PlantUML サーバー URL
+                  </label>
+                  <input
+                    id="plantuml-server"
+                    type="url"
+                    value={plantUmlServerInput}
+                    onChange={(e) => setPlantUmlServerInput(e.target.value)}
+                    onBlur={() => setPlantUmlServer(plantUmlServerInput)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                    }}
+                    placeholder="https://www.plantuml.com/plantuml"
+                    className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 font-mono text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <p className="mt-1 text-xs leading-5 text-gray-500">
+                  図のソースは設定したサーバーへ送信されます。ローカルで動かす場合は
+                  <code className="mx-1 rounded bg-gray-700 px-1 py-0.5 font-mono">http://localhost:8080</code>
+                  などを指定してください。Mermaid と Archify は端末内で描画します。
+                </p>
               </fieldset>
 
               <fieldset>

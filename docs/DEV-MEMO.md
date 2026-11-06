@@ -1,7 +1,7 @@
 # Right-Stuff-Editor 開発メモ
 
 **作成日:** 2026/04/07
-**ステータス:** v0.1.0（tinyjs デスクトップ版）
+**ステータス:** v0.2.0（tinyjs デスクトップ版）
 
 ---
 
@@ -18,7 +18,7 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 | エディタ | Lexical 0.32 | Rich Text / Markdown の双方向切替 |
 | スタイル | Tailwind CSS v4 | `@tailwindcss/vite`、`@tailwindcss/typography` |
 | 永続化 | `tjs:sqlite` + Markdown ファイル | DB は WAL モード |
-| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度（41 tests） |
+| テスト | Vitest 2 | Markdown / Notes 往復、文脈構築、チャットストア、類似度、図表プレビュー（60 tests） |
 
 - バックエンドは `src/backend/main.ts` の `export const api` にメソッドを列挙する方式。`init(app)` で DB とワークスペースを初期化し、`onWindowClosed()` で PTY を停止する。
 - フロントエンドは `window.tiny.api.call(method, params)` で呼び出す。ブリッジは `src/frontend/utils/desktop.ts` に集約し、バックエンドの生 API を画面から直接触らない。
@@ -94,6 +94,17 @@ Electron / Web 版から、tinyjs による macOS ネイティブ・デスクト
 - グローバル例外は `src/frontend/main.tsx` で捕捉し、`clientLog` API 経由でバックエンドのログへ送る。
 - 保存状態は `editorStore` の `saveStatus` と `lastPersistedContent` で管理。保存成功時に旧内容を履歴へ追加し、リカバリをクリアする。
 - バックアップ設定は Zustand の persist。`App.tsx` の interval は設定変更を購読して再設定する。
+
+### プレビューと図表
+
+- プレビューは `components/Preview/MarkdownPreview.tsx`。` ```mermaid ` / ` ```plantuml ` / ` ```puml ` / ` ```archify ` のコードフェンスを専用コンポーネントへ振り分ける。`pre` コンポーネント側で図表の `className` を検出し、`<pre>` ラッパーを外している。
+- Mermaid は `MermaidDiagram.tsx` で `mermaid.render(id, source)` を使う。`mermaid.run()` は DOM を直接書き換えて `data-processed` が残り、本文更新後に再描画されないため使わない。`suppressErrorRendering: true` とし、失敗時はエラーとソースを表示する。
+- Mermaid の ID はモジュールカウンタで毎回変える。同じ ID で再描画すると古い SVG が残ることがある。
+- PlantUML は `utils/diagramEncoding.ts` の `buildPlantUmlUrl()` で `~h` + UTF-8 16 進エンコードの URL を作り、`<img>` で表示する。追加ライブラリは不要。サーバー URL と有効/無効は `stores/previewStore.ts`（localStorage 永続化）に置き、設定の一般タブから変更する。
+- PlantUML は外部サーバーへソースを送る。オフラインや CORS の制約を避けるため `<img>` を使い、`fetch` はしない。エラー時はソースとサーバー設定の確認を促す。
+- Archify は `ArchifyEmbed.tsx`。` ```archify ` の中身が `<` で始まる場合はインライン HTML、それ以外はパスとして扱う。パスは `utils/artifactPath.ts` で解決し、`./` `../` は現在の文書基準、それ以外はワークスペース基準。ワークスペース外は拒否する。
+- Archify HTML は `sandbox="allow-scripts allow-popups allow-forms allow-modals"` の iframe `srcDoc` で表示する。`allow-same-origin` は付けない（親ページへのアクセスを防ぐ）。Archify 側の localStorage は try/catch されているため、テーマはシステム設定に従う。
+- プレビューの拡大率は `previewStore.zoom`（0.5–2.0）を CSS `zoom` で適用する。ヘッダーの − / % / ＋ で操作し、% をクリックすると 100% に戻る。
 
 ### CI とテスト
 

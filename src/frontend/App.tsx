@@ -6,6 +6,7 @@ import { useViewStore } from "./stores/viewStore";
 import { useSystemStatus, formatBytes } from "./hooks/useSystemStatus";
 import { useCommandPaletteStore } from "./stores/commandPaletteStore";
 import { useBackupSettingsStore } from "./stores/backupSettingsStore";
+import { usePreviewStore } from "./stores/previewStore";
 import { CommandPalette } from "./components/CommandPalette";
 import { TemplateSelectorModal } from "./components/Templates";
 import { VersionHistoryModal } from "./components/History";
@@ -51,6 +52,7 @@ const App: React.FC = () => {
     createDocument,
     currentDocumentId,
     documents,
+    workspaceRoot,
     openNotesDocument,
     setContent,
   } = useEditorStore();
@@ -59,6 +61,7 @@ const App: React.FC = () => {
   const { zenMode, toggleZenMode, toggleTypewriterMode } = useViewStore();
   const { isOnline, storage } = useSystemStatus();
   const { isOpen: paletteOpen, open: openPalette, close: closePalette } = useCommandPaletteStore();
+  const { zoom, zoomIn, zoomOut, resetZoom } = usePreviewStore();
   useFocusTimeTracker();
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -392,11 +395,49 @@ const App: React.FC = () => {
     const isSplitView = viewMode === "split";
     return (
       <section className={`${isSplitView ? "hidden md:flex" : "flex"} flex-1 flex-col min-w-0 border-l border-gray-700`} aria-label="プレビュー">
-        <div className="px-4 py-2 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-gray-800 border-b border-gray-700">
           <span className="text-sm font-medium text-gray-300">プレビュー</span>
+          <div className="ml-auto flex items-center gap-0.5" role="group" aria-label="プレビューの拡大率">
+            <button
+              type="button"
+              onClick={zoomOut}
+              disabled={zoom <= 0.5}
+              className="rounded px-2 py-0.5 text-sm text-gray-400 transition-colors hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title="縮小"
+              aria-label="プレビューを縮小"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={resetZoom}
+              className="min-w-[3.25rem] rounded px-1.5 py-0.5 text-xs text-gray-300 transition-colors hover:bg-gray-700 hover:text-white"
+              title="100% に戻す"
+              aria-label={`プレビューの拡大率 ${Math.round(zoom * 100)}%。クリックで 100% に戻す`}
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={zoomIn}
+              disabled={zoom >= 2}
+              className="rounded px-2 py-0.5 text-sm text-gray-400 transition-colors hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title="拡大"
+              aria-label="プレビューを拡大"
+            >
+              ＋
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-auto p-4 bg-gray-900">
-          <MarkdownPreview content={content} theme={resolvedTheme} />
+          <div style={{ zoom }}>
+            <MarkdownPreview
+              content={content}
+              theme={resolvedTheme}
+              workspaceRoot={workspaceRoot}
+              documentPath={currentDocumentId}
+            />
+          </div>
         </div>
       </section>
     );

@@ -12,7 +12,7 @@ Right-Stuff Editor Desktop は、macOS 向けのローカルファースト編�
 - **リカバリ**: 未保存内容を 15 秒ごとにスナップショット。次回起動時に復元を提案
 - **バックアップ**: ワークスペース全体を `.right-stuff/backups` へ定期保存
 - **Apple Notes**: フォルダー・ノート一覧、本文の読み取りと直接更新
-- **強化プレビュー**: GitHub Alerts、Mermaid、KaTeX、シンタックスハイライト
+- **強化プレビュー**: GitHub Alerts、Mermaid、PlantUML、Archify HTML、KaTeX、シンタックスハイライト、拡大率変更
 - **AI アシスタント**: OpenAI 互換 API、Ollama、LM Studio、Apple FM など
 - **ターミナル**: macOS の PTY を wterm で表示
 - **テーマ**: Light / Dark / System
@@ -81,10 +81,36 @@ Settings → バックアップで有効化します。JSON または Markdown �
 | 機能 | 説明 |
 | --- | --- |
 | GitHub Alerts | `> [!NOTE]` などの色分け表示 |
-| Mermaid | ```mermaid コードブロックを図として描画 |
+| Mermaid | `mermaid` コードブロックを図として描画。SVG 保存とソースコピーに対応 |
+| PlantUML | `plantuml` / `puml` コードブロックを PlantUML サーバー経由で描画。設定で URL を変更可能 |
+| Archify | `archify` コードブロックにワークスペース内 HTML のパス、または HTML を直接埋め込み |
 | KaTeX | `$...$` / `$$...$$` の数式 |
 | シンタックスハイライト | コードブロックの言語別表示 |
 | GFM | テーブル、チェックリスト、取り消し線、自動リンク |
+| 拡大率 | プレビューヘッダーの − / % / ＋ で 50–200% に変更 |
+
+### PlantUML
+
+```plantuml
+@startuml
+Alice -> Bob: Hello
+Bob --> Alice: Hi
+@enduml
+```
+
+PlantUML は外部サーバー（既定: `https://www.plantuml.com/plantuml`）で描画します。図のソースがサーバーへ送信されるため、機密情報を含む図では Settings → 一般 → プレビューでローカルサーバー（例: `http://localhost:8080`）を指定するか、レンダリングを無効にしてください。
+
+### Archify
+
+Archify が生成した HTML をワークスペース内に保存し、そのパスを書きます。`./` `../` は現在の文書からの相対パス、それ以外はワークスペースからの相対パスです。
+
+````markdown
+```archify
+.archify/system-architecture-20261106/diagram.html
+```
+````
+
+HTML をそのままコードブロックへ貼り付けた場合も、sandbox 付き iframe で表示します。ワークスペース外のパスは読み込みません。
 
 ## AI アシスタント
 

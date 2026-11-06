@@ -9,7 +9,7 @@ right-stuff-editor-desktop is a local-first macOS editor built with tinyjs (txik
 > **Write, refine, keep. Keep the whole flow on your machine.** Drafts stay as files in the folder you chose and remain usable from other editors, Finder, and Git. There is no cloud sync and no account.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
@@ -18,7 +18,7 @@ right-stuff-editor-desktop is a local-first macOS editor built with tinyjs (txik
 
 ## Download
 
-v0.1.0 is currently built from source. Distribution builds are planned for GitHub Releases.
+v0.2.0 is currently built from source. Distribution builds are also published on GitHub Releases.
 
 > The build is ad-hoc signed. It is not signed or notarized with an Apple Developer ID. If macOS warns on first launch, right-click the app and choose **Open**.
 
@@ -55,7 +55,7 @@ A browser-only editor is convenient, but your drafts live inside the browser's s
 - **Recovery** — snapshots unsaved work every 15 seconds and offers to restore on next launch
 - **Backups** — periodic workspace copies as JSON or Markdown under `.right-stuff/backups`
 - **Apple Notes** — list folders and notes, read and update bodies. Locked and shared notes are read-only
-- **Enhanced preview** — GitHub Alerts, Mermaid, KaTeX, syntax highlighting, GFM
+- **Enhanced preview** — GitHub Alerts, Mermaid, PlantUML, Archify HTML, KaTeX, syntax highlighting, and GFM, with 50–200% zoom and per-diagram source copy / SVG export
 - **AI assistant** — 19 providers (OpenAI-compatible APIs, Ollama, Apple FM, Sarashina, ...), ghost text, slash commands, inline transforms, chat
 - **Style and memory** — style profiles and entity memory for consistent terminology
 - **Terminal** — a macOS PTY rendered with wterm, starting in the workspace
@@ -150,7 +150,7 @@ The landing page is built by [GitHub Actions](./.github/workflows/pages.yml) on 
 | `assets/` | Landing CSS and JavaScript |
 | `favicon.*` / `site.webmanifest` | Icons and PWA metadata |
 
-The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.1.0: universal zip / dmg).
+The app itself is not distributed on the web. macOS builds are published on GitHub Releases (v0.2.0: universal zip / dmg).
 
 - Landing output: `site/`
 - App bundle: `dist/Right-Stuff Editor Desktop.app`
@@ -200,6 +200,14 @@ package.json
 7. Use the export menu to write Markdown, HTML, JSON, TXT, DOCX, or an Ollama Modelfile
 
 ## Known limitations and roadmap
+
+### v0.2.0
+
+- [x] Preview zoom (50–200%)
+- [x] Mermaid re-render, error display, and SVG export
+- [x] PlantUML rendering (configurable server URL, explicit external transfer)
+- [x] Archify HTML embedding (workspace path or inline HTML)
+- [x] Unit tests for diagram previews
 
 ### v0.1.0
 

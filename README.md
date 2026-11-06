@@ -9,7 +9,7 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 > **書く、整える、残す。その流れを、端末内で完結させる。** 原稿は選んだフォルダのファイルに残り、他のエディタ、Finder、Git とそのまま併用できます。クラウド同期やアカウント登録はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-blue.svg)](https://watanabe3tipapa.github.io/right-stuff-editor-desktop/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-editor-desktop.svg)](https://github.com/watanabe3tipapa/right-stuff-editor-desktop/issues)
@@ -18,7 +18,7 @@ right-stuff-editor-desktop は、tinyjs（txiki.js + ネイティブ WebView）�
 
 ## ダウンロード
 
-v0.1.0 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
+v0.2.0 は現在、ソースからのビルドを前提としています。配布用ビルドも GitHub Releases で公開。
 
 > ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
 
@@ -57,7 +57,7 @@ v0.1.0 は現在、ソースからのビルドを前提としています。配�
 - **リカバリ** — 未保存内容を 15 秒ごとにスナップショット。次回起動時に復元を提案
 - **バックアップ** — ワークスペース全体を JSON または Markdown で `.right-stuff/backups` へ定期保存
 - **Apple Notes** — フォルダ・ノート一覧、本文の読み取りと直接更新。ロック・共有ノートは読み取り専用
-- **強化プレビュー** — GitHub Alerts、Mermaid、KaTeX、シンタックスハイライト、GFM
+- **強化プレビュー** — GitHub Alerts、Mermaid、PlantUML、Archify HTML、KaTeX、シンタックスハイライト、GFM。拡大率の変更と、図ごとのソースコピー・SVG 保存に対応
 - **AI アシスタント** — 19 種のプロバイダー（OpenAI 互換 API・Ollama・Apple FM・Sarashina など）、ゴーストテキスト、スラッシュコマンド、選択テキストのインライン変換、AI チャット
 - **文体・記憶** — 文体プロファイルとエンティティメモリで、固有名詞の表記を一貫させる
 - **ターミナル** — macOS の PTY を wterm で表示。ワークスペースをカレントディレクトリとして起動
@@ -152,7 +152,7 @@ open "dist/Right-Stuff Editor Desktop.app"
 | `assets/` | LP 用の CSS / JavaScript |
 | `favicon.*` / `site.webmanifest` | アイコンと PWA メタデータ |
 
-アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.1.0: Universal ビルドの zip / dmg）。
+アプリ本体は Web 配信しません。macOS 向けビルドを GitHub Releases で配布しています（v0.2.0: Universal ビルドの zip / dmg）。
 
 - ランディングページ: `site/`
 - アプリパッケージ: `dist/Right-Stuff Editor Desktop.app`
@@ -202,6 +202,14 @@ package.json
 7. 書き出したいときはツールバーのエクスポートから形式を選択します
 
 ## 既知の制約とロードマップ
+
+### v0.2.0
+
+- [x] プレビューの拡大率変更（50–200%）
+- [x] Mermaid の再描画・エラー表示・SVG 保存
+- [x] PlantUML のレンダリング（サーバー URL を設定可能、外部送信を明示）
+- [x] Archify HTML の埋め込み（ワークスペース内パス / インライン HTML）
+- [x] 図表プレビューのユニットテスト追加
 
 ### v0.1.0
 
