@@ -13,12 +13,14 @@ import { useEditorStore } from "@/stores/editorStore";
 import type { LLMProvider } from "@/utils/llmClient";
 import { APPLEFM_DEFAULT_PORT, checkAppleFMHealth, type AppleFMHealth } from "@/utils/llmClient";
 
+export type SettingsTab = "general" | "ai" | "memory" | "gist" | "templates";
+
 interface SettingsProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 開いたときに表示するタブ。省略時は現在のタブを維持する。 */
+  initialTab?: SettingsTab;
 }
-
-type SettingsTab = "general" | "ai" | "memory" | "gist" | "templates";
 
 const TAB_LABELS: Record<SettingsTab, string> = {
   general: "一般",
@@ -91,7 +93,11 @@ const labelClass = "mb-2 block text-sm font-medium text-gray-300";
 const btnClass =
   "rounded-lg border border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700 disabled:opacity-50";
 
-export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
+export const Settings: React.FC<SettingsProps> = ({
+  isOpen,
+  onClose,
+  initialTab,
+}) => {
   const { provider, config, setProvider, setConfig } = useLLMStore();
   const { theme, setTheme } = useThemeStore();
   const {
@@ -149,6 +155,8 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     add: addTemplate,
     remove: removeTemplate,
     update: updateTemplate,
+    duplicate: duplicateTemplate,
+    resetBuiltin: resetBuiltinTemplate,
   } = useTemplateStore();
   const { content: currentContent, currentDocumentId, documents } = useEditorStore();
 
@@ -184,6 +192,10 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     setPlantUmlServerInput(plantUmlServer);
   }, [plantUmlServer]);
+
+  useEffect(() => {
+    if (isOpen && initialTab) setActiveTab(initialTab);
+  }, [isOpen, initialTab]);
 
   useEffect(() => {
     if (isOpen && activeTab === "templates") {
@@ -1058,6 +1070,21 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                       rows={5}
                       className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-1.5 font-mono text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    <p className="text-[11px] leading-relaxed text-gray-500">
+                      プレースホルダ:
+                      <code className="mx-1 rounded bg-gray-700 px-1">{"{{title}}"}</code>
+                      文書名、
+                      <code className="mx-1 rounded bg-gray-700 px-1">{"{{date}}"}</code>
+                      日付、
+                      <code className="mx-1 rounded bg-gray-700 px-1">{"{{time}}"}</code>
+                      時刻、
+                      <code className="mx-1 rounded bg-gray-700 px-1">{"{{datetime}}"}</code>
+                      日時、
+                      <code className="mx-1 rounded bg-gray-700 px-1">{"{{weekday}}"}</code>
+                      曜日。旧形式の
+                      <code className="mx-1 rounded bg-gray-700 px-1">YYYY-MM-DD</code>
+                      なども使えます。
+                    </p>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -1152,6 +1179,28 @@ export const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
                         >
                           編集
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void duplicateTemplate(t.id);
+                          }}
+                          className="rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:bg-gray-600"
+                        >
+                          複製
+                        </button>
+                        {t.builtin && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`テンプレート「${t.name}」を初期状態に戻しますか？`)) {
+                                void resetBuiltinTemplate(t.id);
+                              }
+                            }}
+                            className="rounded bg-gray-700 px-2 py-1 text-xs text-amber-300 hover:bg-gray-600"
+                          >
+                            初期化
+                          </button>
+                        )}
                         {!t.builtin && (
                           <button
                             type="button"

@@ -17,12 +17,14 @@ interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenSettings?: () => void;
+  onOpenTemplateSelector?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onOpenSettings,
+  onOpenTemplateSelector,
 }) => {
   const { documents, currentDocumentId, openDocument, createDocument } =
     useEditorStore();
@@ -82,6 +84,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         onClose();
       },
     });
+    if (onOpenTemplateSelector) {
+      out.push({
+        id: "cmd-template-selector",
+        label: "テンプレートから作成",
+        group: "command",
+        description: "プレビューを見ながら文書名を決めて作成",
+        onSelect: () => {
+          onClose();
+          onOpenTemplateSelector();
+        },
+      });
+    }
     if (onOpenSettings) {
       out.push({
         id: "cmd-settings",
@@ -95,7 +109,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
 
     // Templates
-    templates.slice(0, 5).forEach((t) => {
+    const templateQuery = q.replace(/^(テンプレート|template)[:\s]*/, "");
+    const matchedTemplates = templates
+      .filter((t) => {
+        if (!templateQuery) return true;
+        return (
+          t.name.toLowerCase().includes(templateQuery) ||
+          t.description.toLowerCase().includes(templateQuery) ||
+          (t.category ?? "").toLowerCase().includes(templateQuery) ||
+          t.content.toLowerCase().includes(templateQuery)
+        );
+      })
+      .slice(0, 20);
+    matchedTemplates.forEach((t) => {
       out.push({
         id: `tpl-${t.id}`,
         label: `テンプレート: ${t.name}`,
@@ -103,9 +129,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         description: t.description,
         onSelect: () => {
           onClose();
-          void createDocument(t.name || "テンプレート", applyTemplate(t.content)).then(
-            (doc) => openDocument(doc.id),
-          );
+          void createDocument(
+            t.name || "テンプレート",
+            applyTemplate(t.content, { title: t.name }),
+          ).then((doc) => openDocument(doc.id));
         },
       });
     });
@@ -146,7 +173,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     });
 
     return out.slice(0, 30);
-  }, [query, documents, templates, currentDocumentId, createDocument, openDocument, onClose, onOpenSettings]);
+  }, [query, documents, templates, currentDocumentId, createDocument, openDocument, onClose, onOpenSettings, onOpenTemplateSelector]);
 
   useEffect(() => {
     if (activeIndex >= commands.length) setActiveIndex(Math.max(0, commands.length - 1));

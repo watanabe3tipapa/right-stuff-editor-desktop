@@ -19,6 +19,7 @@ import { ChatPanel } from "./components/Chat/ChatPanel";
 import { ASMPanel } from "./components/ASM/ASMPanel";
 import { Sidebar } from "./components/Sidebar/Sidebar";
 import { Settings } from "./components/Settings/Settings";
+import type { SettingsTab } from "./components/Settings/Settings";
 import { WTermTerminal } from "./components/Terminal/WTermTerminal";
 import { GistUploadModal } from "./components/Gist/GistUploadModal";
 import { NotesBrowser } from "./components/Notes/NotesBrowser";
@@ -68,6 +69,7 @@ const App: React.FC = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [asmOpen, setAsmOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [gistUploadOpen, setGistUploadOpen] = useState(false);
@@ -642,7 +644,14 @@ const App: React.FC = () => {
         onClose={() => setNotesOpen(false)}
         onOpenNote={(input) => openNotesDocument(input)}
       />
-      <Settings isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <Settings
+        isOpen={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
+          setSettingsTab("general");
+        }}
+        initialTab={settingsTab}
+      />
       <GistUploadModal isOpen={gistUploadOpen} onClose={() => setGistUploadOpen(false)} />
       <GistViewer isOpen={gistViewerOpen} onClose={() => setGistViewerOpen(false)} />
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
@@ -650,10 +659,16 @@ const App: React.FC = () => {
         isOpen={paletteOpen}
         onClose={closePalette}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
       />
       <TemplateSelectorModal
         isOpen={templateSelectorOpen}
         onClose={() => setTemplateSelectorOpen(false)}
+        onOpenSettings={() => {
+          setTemplateSelectorOpen(false);
+          setSettingsTab("templates");
+          setSettingsOpen(true);
+        }}
       />
       <VersionHistoryModal
         isOpen={versionHistoryDocId !== null}

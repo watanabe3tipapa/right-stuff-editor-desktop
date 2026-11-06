@@ -175,7 +175,7 @@ const LandingPage: React.FC = () => (
             </a>
           </div>
           <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-400">
-            <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />v0.3.0</span>
+            <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />v0.3.1</span>
             <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />MIT License</span>
             <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-4 w-4 text-emerald-400" />Apple Silicon</span>
           </div>
@@ -340,7 +340,7 @@ const LandingPage: React.FC = () => (
 
     <footer className="relative z-10 border-t border-slate-800 px-5 py-8 text-sm text-slate-500">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <span>Right-Stuff Editor Desktop · v0.3.0 · MIT License</span>
+        <span>Right-Stuff Editor Desktop · v0.3.1 · MIT License</span>
         <div className="flex items-center gap-4">
           <a className="inline-flex items-center gap-1.5 hover:text-slate-300" href={USAGE_URL} target="_blank" rel="noopener noreferrer">Docs</a>
           <a className="inline-flex items-center gap-1.5 hover:text-slate-300" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">

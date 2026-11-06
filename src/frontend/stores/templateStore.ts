@@ -6,31 +6,56 @@ const md = (...lines: string[]) => lines.join("\n");
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-const todayString = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
+const WEEKDAYS = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
 
-const nowString = () => {
-  const d = new Date();
-  return `${todayString()}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-};
+const dateString = (date: Date) =>
+  `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+const timeString = (date: Date) =>
+  `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+
+export interface TemplateVariables {
+  /** 文書タイトル。`{{title}}` に埋め込まれる。 */
+  title?: string;
+  /** テストや再現用に日時を固定する。 */
+  date?: Date;
+}
 
 /**
  * テンプレート本文内のプレースホルダを作成時点の値に置換する。
  * 置換する文字列:
- * - YYYY-MM-DDTHH:MM → 作成日時のローカル表記
- * - YYYY-MM-DD       → 作成日付
- * - HH:MM            → 作成時刻
+ * - `YYYY-MM-DDTHH:MM` / `{{datetime}}` → 作成日時のローカル表記
+ * - `YYYY-MM-DD` / `{{date}}`         → 作成日付
+ * - `HH:MM` / `{{time}}`              → 作成時刻
+ * - `{{weekday}}`                     → 曜日
+ * - `{{title}}`                       → 文書タイトル
  */
-export const applyTemplate = (content: string): string =>
-  content
+export const applyTemplate = (
+  content: string,
+  variables: TemplateVariables = {},
+): string => {
+  const date = variables.date ?? new Date();
+  const day = dateString(date);
+  const time = timeString(date);
+  const datetime = `${day}T${time}`;
+  return content
     .split("YYYY-MM-DDTHH:MM")
-    .join(nowString())
+    .join(datetime)
     .split("YYYY-MM-DD")
-    .join(todayString())
+    .join(day)
     .split("HH:MM")
-    .join(nowString().slice(11));
+    .join(time)
+    .split("{{datetime}}")
+    .join(datetime)
+    .split("{{date}}")
+    .join(day)
+    .split("{{time}}")
+    .join(time)
+    .split("{{weekday}}")
+    .join(WEEKDAYS[date.getDay()] ?? "")
+    .split("{{title}}")
+    .join(variables.title ?? "");
+};
 
 export const BUILTIN_TEMPLATE_CATEGORIES = [
   "思考記録",
@@ -38,6 +63,9 @@ export const BUILTIN_TEMPLATE_CATEGORIES = [
   "AI協働",
   "ナレッジ",
   "執筆",
+  "仕事",
+  "学習",
+  "技術",
   "Gist",
   "Markdown",
 ] as const;
@@ -898,6 +926,382 @@ export const BUILTIN_TEMPLATES: DocumentTemplate[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    id: "builtin-meeting-notes",
+    name: "議事録",
+    description: "アジェンダ・決定事項・アクションアイテムを1枚にまとめる定番の会議記録",
+    category: "仕事",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "date: {{date}}",
+      "time: {{time}}",
+      "attendees:",
+      '  - ""',
+      "tags:",
+      '  - "meeting"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "- 日時: {{date}} {{time}} ({{weekday}})",
+      "- 参加者: ",
+      "- ファシリテーター: ",
+      "- 目的: ",
+      "",
+      "## アジェンダ",
+      "1. ",
+      "2. ",
+      "3. ",
+      "",
+      "## 決定事項",
+      "- [ ] ",
+      "- [ ] ",
+      "",
+      "## 議論の記録",
+      "",
+      "### ",
+      "- 要点: ",
+      "- 異論: ",
+      "- 決定: ",
+      "",
+      "## アクションアイテム",
+      "| 担当 | 内容 | 期限 |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## 次回",
+      "- 日時: ",
+      "- 議題: ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-weekly-report",
+    name: "週報",
+    description: "今週の成果・進捗・ブロッカー・来週の予定を簡潔に共有する",
+    category: "仕事",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "week: {{date}}",
+      "tags:",
+      '  - "weekly-report"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "期間: {{date}} 〜 ",
+      "",
+      "## 今週の成果",
+      "- ",
+      "",
+      "## 進捗",
+      "| プロジェクト | 状態 | メモ |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## 課題とブロッカー",
+      "- ",
+      "",
+      "## 来週の予定",
+      "- [ ] ",
+      "- [ ] ",
+      "",
+      "## 所感",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-project-plan",
+    name: "プロジェクト計画",
+    description: "目的・スコープ・マイルストーン・リスクを整理して着手前に合意する",
+    category: "仕事",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "created: {{datetime}}",
+      'status: "planning"',
+      "tags:",
+      '  - "project"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "## 目的",
+      "何を実現するか: ",
+      "",
+      "## 背景",
+      "なぜ今取り組むか: ",
+      "",
+      "## スコープ",
+      "### やること",
+      "- ",
+      "",
+      "### やらないこと",
+      "- ",
+      "",
+      "## マイルストーン",
+      "| 時期 | 成果物 | 状態 |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## リスク",
+      "| リスク | 影響 | 対策 |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## 体制",
+      "- オーナー: ",
+      "- 関係者: ",
+      "",
+      "## 次の一歩",
+      "- [ ] ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-blog-outline",
+    name: "ブログ記事構成",
+    description: "読者・結論・構成・根拠を先に固めてから書き始める記事設計シート",
+    category: "執筆",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "date: {{date}}",
+      "tags:",
+      '  - "blog"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "## 読者",
+      "- 誰に: ",
+      "- どんな課題: ",
+      "- 読み終えた後の変化: ",
+      "",
+      "## 結論（先に書く）",
+      "",
+      "",
+      "## 構成",
+      "1. 導入: ",
+      "2. 本文: ",
+      "3. まとめ: ",
+      "",
+      "## 根拠・事例",
+      "- ",
+      "",
+      "## タイトル案",
+      "- ",
+      "- ",
+      "",
+      "## 公開前チェック",
+      "- [ ] 事実確認",
+      "- [ ] リンク確認",
+      "- [ ] 読みやすさ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-book-review",
+    name: "書評ノート",
+    description: "一言要約・印象的な箇所・学び・行動への接続をまとめる書評テンプレート",
+    category: "執筆",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "date: {{date}}",
+      "tags:",
+      '  - "book-review"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "- 書名: ",
+      "- 著者: ",
+      "- 読了日: {{date}}",
+      "- 評価: ★★★★☆",
+      "",
+      "## 一言でいうと",
+      "",
+      "",
+      "## 印象に残った箇所",
+      "> ",
+      "",
+      "## 学び",
+      "- ",
+      "",
+      "## 疑問・反論",
+      "- ",
+      "",
+      "## 行動に移すこと",
+      "- [ ] ",
+      "",
+      "## 関連する本",
+      "- ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-reading-notes",
+    name: "読書ノート",
+    description: "章ごとの要点・引用・疑問を残し、重要語句を自分の言葉で整理する",
+    category: "学習",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "date: {{date}}",
+      "tags:",
+      '  - "reading"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "- 書名: ",
+      "- 著者: ",
+      "- 開始日: {{date}}",
+      "- 読書目的: ",
+      "",
+      "## 全体の要約",
+      "",
+      "",
+      "## 章ごとのメモ",
+      "### 第1章: ",
+      "- 要点: ",
+      "- 引用: ",
+      "- 疑問: ",
+      "",
+      "### 第2章: ",
+      "- 要点: ",
+      "- 引用: ",
+      "- 疑問: ",
+      "",
+      "## 重要語句",
+      "| 用語 | 意味 | 自分の言葉 |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## 実践メモ",
+      "- [ ] ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-learning-plan",
+    name: "学習計画",
+    description: "ゴール・現状・学習項目・週ごとの計画を可視化して学習を前進させる",
+    category: "学習",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "start: {{date}}",
+      "tags:",
+      '  - "learning"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "## ゴール",
+      "- できるようになりたいこと: ",
+      "- 期限: ",
+      "- 成果物: ",
+      "",
+      "## 現状",
+      "- 知っていること: ",
+      "- 知らないこと: ",
+      "",
+      "## 学習項目",
+      "| 項目 | リソース | 目安時間 | 状態 |",
+      "| --- | --- | --- | --- |",
+      "|  |  |  |  |",
+      "",
+      "## 週ごとの計画",
+      "### 第1週 ({{date}}〜)",
+      "- [ ] ",
+      "",
+      "### 第2週",
+      "- [ ] ",
+      "",
+      "## 振り返り",
+      "- うまくいったこと: ",
+      "- 調整すること: ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: "builtin-incident-review",
+    name: "障害振り返り",
+    description: "タイムライン・原因・対応・再発防止を時系列で整理するインシデントレビュー",
+    category: "技術",
+    content: md(
+      "---",
+      'title: "{{title}}"',
+      "date: {{date}}",
+      'severity: ""',
+      'status: "draft"',
+      "tags:",
+      '  - "incident"',
+      "---",
+      "",
+      "# {{title}}",
+      "",
+      "## 概要",
+      "- 発生日時: {{datetime}}",
+      "- 影響範囲: ",
+      "- 継続時間: ",
+      "- 深刻度: ",
+      "",
+      "## タイムライン",
+      "| 時刻 | 出来事 | 対応者 |",
+      "| --- | --- | --- |",
+      "|  |  |  |",
+      "",
+      "## 原因",
+      "### 直接原因",
+      "",
+      "",
+      "### 根本原因",
+      "",
+      "",
+      "## 対応",
+      "- 検知: ",
+      "- 緩和: ",
+      "- 復旧: ",
+      "",
+      "## 再発防止",
+      "| 対策 | 担当 | 期限 | 状態 |",
+      "| --- | --- | --- | --- |",
+      "|  |  |  |  |",
+      "",
+      "## 学び",
+      "- ",
+      "",
+    ),
+    builtin: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ];
 
 interface TemplateStore {
@@ -918,6 +1322,8 @@ interface TemplateStore {
     content?: string;
     category?: string;
   }) => Promise<void>;
+  duplicate: (id: string) => Promise<DocumentTemplate | null>;
+  resetBuiltin: (id: string) => Promise<void>;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -1037,6 +1443,58 @@ export const useTemplateStore = create<TemplateStore>()((set, get) => ({
               category: input.category ?? t.category,
               updatedAt: now,
             }
+          : t,
+      ),
+    }));
+  },
+
+  duplicate: async (id) => {
+    const source = get().templates.find((t) => t.id === id);
+    if (!source) return null;
+    const now = new Date();
+    const copy: DocumentTemplate = {
+      id: generateId(),
+      name: `${source.name}（コピー）`,
+      description: source.description,
+      content: source.content,
+      category: source.category,
+      builtin: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await desktop.templatesUpsert({
+      uuid: copy.id,
+      name: copy.name,
+      description: copy.description,
+      content: copy.content,
+      category: copy.category,
+      builtin: false,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    });
+    set((state) => ({ templates: [...state.templates, copy] }));
+    return copy;
+  },
+
+  resetBuiltin: async (id) => {
+    const original = BUILTIN_TEMPLATES.find((t) => t.id === id);
+    const existing = get().templates.find((t) => t.id === id);
+    if (!original || !existing) return;
+    const now = new Date();
+    await desktop.templatesUpsert({
+      uuid: id,
+      name: original.name,
+      description: original.description,
+      content: original.content,
+      category: original.category,
+      builtin: true,
+      createdAt: existing.createdAt.toISOString(),
+      updatedAt: now.toISOString(),
+    });
+    set((state) => ({
+      templates: state.templates.map((t) =>
+        t.id === id
+          ? { ...original, createdAt: existing.createdAt, updatedAt: now }
           : t,
       ),
     }));

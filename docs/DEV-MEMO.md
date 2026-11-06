@@ -2260,3 +2260,43 @@ Electron ではなく Google Chrome を `--headless=new --remote-debugging-port=
 
 - ライトモード切替、⌘K / `/` パレット、テンプレート、履歴、一括出力等の手動検証は未実施。
 - コミットメッセージは本変更を `feat: integrate all 22 improvement proposals via sidebar extension` として記録。
+
+---
+
+## 43. v0.3.1 テンプレート充実化 (2026/11/06)
+
+### 概要
+
+テンプレート機能を「選ぶだけ」から「確認して、名前を決めて作る」体験へ拡張し、**v0.3.1** としてリリースした。
+
+### 変更点
+
+| # | 対象 | 内容 |
+|---|------|------|
+| 1 | `stores/templateStore.ts` | `TemplateVariables` と `applyTemplate(content, { title, date })` を追加。`{{title}}` / `{{date}}` / `{{time}}` / `{{datetime}}` / `{{weekday}}` を置換。旧 `YYYY-MM-DD` 形式も維持 |
+| 2 | `stores/templateStore.ts` | 組み込みテンプレートを8件追加（議事録、週報、プロジェクト計画、ブログ記事構成、書評ノート、読書ノート、学習計画、障害振り返り）。カテゴリ `仕事` / `学習` / `技術` を追加 |
+| 3 | `stores/templateStore.ts` | `duplicate(id)` と `resetBuiltin(id)` を追加 |
+| 4 | `components/Templates/TemplateSelectorModal.tsx` | 2ペイン化。検索・カテゴリ絞り込み・プレビュー / ソース切替・文書名入力・キーボード操作・白紙作成・設定への導線を追加 |
+| 5 | `components/Settings/Settings.tsx` | `initialTab` を追加。テンプレートに「複製」「初期化」ボタンとプレースホルダの説明を追加 |
+| 6 | `components/CommandPalette/CommandPalette.tsx` | 「テンプレートから作成」コマンドを追加。テンプレート検索を全件に拡張し、`{{title}}` にテンプレート名を渡す |
+| 7 | `App.tsx` | `settingsTab` 状態を追加し、テンプレート選択モーダルから設定のテンプレートタブを開けるようにした |
+| 8 | `stores/templateStore.test.ts` | 変数置換と組み込みテンプレートの整合性テストを追加 |
+
+### バージョン整合（v0.3.0 → v0.3.1）
+
+- `package.json` / `package-lock.json` / `tinyjs.json`
+- `src/backend/main.ts` の `appInfo.version`（`0.1.0` のまま古かったため修正）
+- `LandingPage.tsx` / `HelpModal.tsx` / `Terminal.tsx` の表示
+- `README.md` / `README.en.md` / `docs/README.md` / `docs/USAGE.md` / `docs/HISTORY.md`
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+### 備考
+
+- 新しい npm パッケージは追加していない。
+- `docs/HISTORY.md` の旧 Electron 版 v0.3.1 エントリは過去の記録として残している。

@@ -183,7 +183,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
               About
             </h2>
-            <p className="text-sm text-gray-300">Right-Stuff Editor Desktop v0.3.0</p>
+            <p className="text-sm text-gray-300">Right-Stuff Editor Desktop v0.3.1</p>
             <p className="mt-1 text-xs leading-5 text-gray-400">
               リッチテキストと Markdown を切り替えながら、端末内に自動保存できる軽量エディタです。
               スラッシュメニュー、キーボード中心のブロック操作、検索と置換、AI の補完・変換・チャット、
